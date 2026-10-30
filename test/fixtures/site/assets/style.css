@@ -1,0 +1,10 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #f1eee7; color: #272a26; font-family: "Segoe UI", sans-serif; }
+nav { display: flex; justify-content: space-between; padding: 26px 7vw; border-bottom: 1px solid #cac4b8; font-size: 12px; }
+nav span { font-family: Georgia, serif; font-size: 18px; }
+a { color: inherit; }
+main { max-width: 1000px; margin: 0 auto; padding: 15vh 7vw; }
+.kicker { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #b14932; }
+h1 { font-family: Georgia, serif; font-size: clamp(58px, 9vw, 112px); font-weight: 500; letter-spacing: -.06em; line-height: .92; margin: 20px 0 30px; }
+.intro { max-width: 420px; color: #65635b; line-height: 1.7; }
+.button { display: inline-block; margin-top: 24px; padding: 14px 20px; background: #b14932; color: white; text-decoration: none; font-size: 13px; }

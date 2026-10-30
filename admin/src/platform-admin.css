@@ -1,0 +1,347 @@
+.platform-admin {
+  color: var(--ink);
+}
+
+.platform-admin__main {
+  min-width: 0;
+}
+
+.platform-admin__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.platform-admin button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  transition:
+    background-color 300ms var(--ease),
+    border-color 300ms var(--ease),
+    color 300ms var(--ease),
+    transform 500ms var(--ease);
+}
+
+.platform-admin button:hover:not(:disabled) {
+  border-color: var(--ink-soft);
+  background: var(--surface);
+  transform: translateY(-2px);
+}
+
+.platform-admin button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.platform-admin button:disabled {
+  cursor: wait;
+  opacity: 0.56;
+}
+
+.platform-admin .platform-admin__primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fffaf6;
+}
+
+.platform-admin .platform-admin__primary:hover:not(:disabled) {
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+}
+
+.platform-admin__panel {
+  margin-bottom: 24px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2xl);
+  background: var(--surface);
+}
+
+.platform-admin h2 {
+  margin: 0 0 24px;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 36px;
+}
+
+.platform-admin h3,
+.platform-admin legend {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.platform-admin fieldset {
+  min-width: 0;
+  margin: 0 0 32px;
+  padding: 0;
+  border: 0;
+}
+
+.platform-admin legend {
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.platform-admin label {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.platform-admin__quotas {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-admin__quotas label {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.platform-admin__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface-soft);
+}
+
+.platform-admin__check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.platform-admin__hint {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.platform-admin__retention {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface-soft);
+}
+
+.platform-admin__retention h3,
+.platform-admin__retention p {
+  margin: 0 0 8px;
+}
+
+.platform-admin__retention label {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.platform-admin__retention > p:last-child {
+  margin-bottom: 0;
+}
+
+.platform-admin__alert,
+.platform-admin__notice {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.platform-admin__alert {
+  border-color: #e6b7aa;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.platform-admin__notice {
+  border-color: #b9d0bf;
+  background: var(--sage-soft);
+  color: var(--sage);
+}
+
+.platform-admin__alert a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.platform-admin__reports {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.platform-admin__reports li {
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.platform-admin__reports li:last-child {
+  padding-bottom: 0;
+}
+
+.platform-admin__report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platform-admin__report-head strong {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.platform-admin__status {
+  padding: 4px 8px;
+  border: 1px solid #e6b7aa;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.platform-admin__description {
+  margin: 12px 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre-wrap;
+}
+
+.platform-admin__meta {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.platform-admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.platform-admin__workspace-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.platform-admin__workspaces {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.platform-admin__workspaces li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.platform-admin__workspace-identity {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.platform-admin__workspace-identity span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.platform-admin__workspaces button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.platform-admin__workspace-quota {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface-soft);
+}
+
+.platform-admin__workspace-quota h3 {
+  margin: 0 0 16px;
+}
+
+.platform-admin__workspace-quota form {
+  margin-top: 24px;
+}
+
+.platform-admin__workspace-quota > button + button {
+  margin-left: 8px;
+}
+
+.platform-admin__workspace-quota ul,
+.platform-admin__panel > ul:not(.platform-admin__reports):not(.platform-admin__workspaces) {
+  margin: 16px 0 0;
+  padding-left: 24px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+@media (max-width: 900px) {
+  .platform-admin__panel {
+    padding: 24px;
+  }
+
+  .platform-admin__quotas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .platform-admin__panel {
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+
+  .platform-admin__workspace-quota {
+    padding: 16px;
+  }
+
+  .platform-admin__actions button,
+  .platform-admin__workspaces li > button {
+    width: 100%;
+  }
+}

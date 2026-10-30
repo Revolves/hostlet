@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { openDatabase } from '../server/database.js';
+import { loadConfig } from '../server/config.js';
+import { createApps } from '../server/app.js';
+import { deletionJournalSql } from '../server/workspace-deletion.js';
+
+test('startup restores an interrupted deletion before accepting workspace requests',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'hostlet-startup-'));
+ const db=openDatabase(':memory:');t.after(()=>{db.close();fs.rmSync(root,{recursive:true,force:true});});
+ if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='workspace_deletion_journal'").get())db.exec(deletionJournalSql);
+ db.exec("INSERT INTO users(id,email,password_hash,created_at) VALUES ('u','u@example.org','hash',0); INSERT INTO workspaces VALUES ('s','Space','personal','u','now'); INSERT INTO workspace_members VALUES ('s','u','owner','now')");
+ const id='w-'+'a'.repeat(32),quarantine='b'.repeat(32),storage=path.join(root,'workspace-storage');
+ db.prepare('INSERT INTO workspace_page_ids VALUES (?)').run(id);
+ db.prepare('INSERT INTO workspace_pages VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,'s','u','title','private',id,'1-aaaaaaaaaa','index.html','html','index.html',1,1,'now','now');
+ db.prepare('INSERT INTO workspace_page_revisions VALUES (?,0)').run(id);
+ db.prepare('INSERT INTO workspace_page_releases VALUES (?,?,?,?,?,?,?,?)').run(id,'1-aaaaaaaaaa','index.html','html','index.html',1,1,'now');
+ const isolated=path.join(storage,'sites',`.retention-${quarantine}`,'releases','1-aaaaaaaaaa');fs.mkdirSync(isolated,{recursive:true});fs.writeFileSync(path.join(isolated,'index.html'),'safe');
+ db.prepare('INSERT INTO workspace_deletion_journal VALUES (?,?,?,?,?,?)').run(id,'s',0,storage,quarantine,1);
+ const config=loadConfig({ADMIN_PASSWORD:'test-admin-password',APP_SECRET:'0123456789abcdef0123456789abcdef',DATA_DIR:root});
+ await createApps({config,db,accountSender:async()=>{}});
+ assert.equal(fs.readFileSync(path.join(storage,'sites',id,'releases','1-aaaaaaaaaa','index.html'),'utf8'),'safe');
+ assert.equal(db.prepare('SELECT count(*) n FROM workspace_deletion_journal').get().n,0);
+ fs.renameSync(path.join(storage,'sites',id),path.join(storage,'sites',`.retention-${quarantine}`));
+ db.prepare('INSERT INTO workspace_deletion_journal VALUES (?,?,?,?,?,?)').run(id,'s',0,path.join(root,'wrong-storage'),quarantine,1);
+ await assert.rejects(createApps({config,db,accountSender:async()=>{}}),/Invalid journal identifiers/);
+ assert.equal(fs.readFileSync(path.join(isolated,'index.html'),'utf8'),'safe');
+ assert.equal(db.prepare('SELECT count(*) n FROM workspace_deletion_journal').get().n,1);
+});

@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in the private env file}
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in the private env file}
+      ADMIN_PORT: "3000"
+      PAGES_PORT: "8080"
+      DATA_DIR: /var/lib/hostlet
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN:?Set ADMIN_ORIGIN}
+      ADMIN_ORIGINS: ${ADMIN_ORIGIN:?Set ADMIN_ORIGIN}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL}
+      COOKIE_SECURE: "true"
+      SECURITY_LOG_RETENTION_DAYS: ${SECURITY_LOG_RETENTION_DAYS:-180}
+      TRUSTED_PROXY_IPS: 172.29.25.2
+      MAX_UPLOAD_BYTES: "52428800"
+      MULTIUSER_ENABLED: ${MULTIUSER_ENABLED:-false}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      APPS_DOMAIN: ${APPS_DOMAIN:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    volumes:
+      - hostlet-data:/var/lib/hostlet
+    networks:
+      - backend
+    logging:
+      driver: none
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ${NGINX_CONFIG:?Set NGINX_CONFIG to the reviewed absolute config path}:/etc/nginx/nginx.conf:ro
+      - ${TLS_DIR:?Set TLS_DIR to the absolute certificate directory}:/etc/nginx/tls:ro
+    networks:
+      backend:
+        ipv4_address: 172.29.25.2
+    logging:
+      driver: none
+
+networks:
+  backend:
+    ipam:
+      config:
+        - subnet: 172.29.25.0/24
+
+volumes:
+  hostlet-data:

@@ -1,0 +1,74 @@
+# DRAFT ONLY: single-IP mode has not passed deployment or security acceptance.
+# Use a unique Compose project name and a dedicated, non-overlapping subnet.
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    user: node
+    init: true
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in a private env file}
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in a private env file}
+      ADMIN_PORT: "3000"
+      PAGES_PORT: "8080"
+      DATA_DIR: /var/lib/hostlet
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN:?Set the HTTPS IP management origin with port 30006}
+      ADMIN_ORIGINS: ${ADMIN_ORIGIN:?Set ADMIN_ORIGIN}
+      PUBLIC_BASE_URL: ${SINGLE_IP_CONTENT_ORIGIN:?Set the HTTPS IP content origin with port 30007}
+      SINGLE_IP_CONTENT_ORIGIN: ${SINGLE_IP_CONTENT_ORIGIN:?Set SINGLE_IP_CONTENT_ORIGIN}
+      COOKIE_SECURE: "true"
+      MULTIUSER_ENABLED: "true"
+      REGISTRATION_ENABLED: "false"
+      APPS_DOMAIN: ""
+      TRUSTED_PROXY_IPS: ${IP_PROXY_ADDRESS:?Set a dedicated proxy address in IP_SUBNET}
+      SECURITY_LOG_RETENTION_DAYS: ${SECURITY_LOG_RETENTION_DAYS:-180}
+      MAX_UPLOAD_BYTES: "52428800"
+      SMTP_HOST: ${SMTP_HOST:?Set SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      SMTP_FROM: ${SMTP_FROM:?Set SMTP_FROM}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    volumes:
+      - type: bind
+        source: ${IP_DATA_DIR:?Set an absolute dedicated new data directory}
+        target: /var/lib/hostlet
+        bind:
+          create_host_path: false
+    networks:
+      - backend
+    logging:
+      driver: none
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "30006:30006"
+      - "30007:30007"
+    volumes:
+      - type: bind
+        source: ${IP_NGINX_CONFIG:?Set the absolute reviewed nginx config path}
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${IP_TLS_DIR:?Set the absolute dedicated certificate directory}
+        target: /etc/nginx/tls
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      backend:
+        ipv4_address: ${IP_PROXY_ADDRESS:?Set IP_PROXY_ADDRESS}
+    logging:
+      driver: none
+
+networks:
+  backend:
+    ipam:
+      config:
+        - subnet: ${IP_SUBNET:?Set a dedicated non-overlapping IPv4 subnet}

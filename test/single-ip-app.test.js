@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { openDatabase } from '../server/database.js';
+import { loadConfig } from '../server/config.js';
+import { createApps } from '../server/app.js';
+import { createAccounts } from '../server/accounts.js';
+import { createApiCredentials } from '../server/api-credentials.js';
+
+test('single IP mode keeps registration closed despite a persisted open setting and rejects content-origin writes', async t => {
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'hostlet-ip-app-'));const db=openDatabase(':memory:');
+  const config=loadConfig({ADMIN_PASSWORD:'test-admin-password',APP_SECRET:'0123456789abcdef0123456789abcdef',DATA_DIR:dir,
+    MULTIUSER_ENABLED:'true',SMTP_HOST:'smtp.example.org',SMTP_FROM:'noreply@example.org',COOKIE_SECURE:'true',
+    ADMIN_ORIGIN:'https://192.0.2.1:30006',SINGLE_IP_CONTENT_ORIGIN:'https://192.0.2.1:30007'});
+  db.prepare('INSERT INTO platform_settings VALUES (1,?)').run(JSON.stringify({registrationEnabled:true,retention:{mode:'long-term',days:null,notifyBeforeDays:null},defaultQuotas:{maxApps:2,maxStorageBytes:1000,maxUploadBytes:1000}}));
+  let verification;const accounts=createAccounts({db,sender:async message=>{verification=message.token;}});
+  const account=await accounts.register({email:'person@example.org',password:'a sufficiently long password'});assert.equal(accounts.verifyEmail(verification),true);
+  const {admin,hosted}=await createApps({config,db,accountSender:async()=>{}});
+  const server=http.createServer(admin);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const content=http.createServer(hosted);await new Promise(resolve=>content.listen(0,'127.0.0.1',resolve));
+  t.after(async()=>{await Promise.all([new Promise(resolve=>server.close(resolve)),new Promise(resolve=>content.close(resolve))]);db.close();await fs.rm(dir,{recursive:true,force:true});});
+  const call=(method,url,headers={},body)=>new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port:server.address().port,path:url,method,headers:{host:'192.0.2.1:30006',...headers}},res=>{let data='';res.on('data',chunk=>data+=chunk);res.on('end',()=>resolve({status:res.statusCode,body:data,headers:res.headers}));});req.on('error',reject);req.end(body);});
+  const features=await call('GET','/api/features');const parsed=JSON.parse(features.body);
+  assert.equal(parsed.registration,false);assert.equal(parsed.ipHostingOrigin,'https://192.0.2.1:30007');
+  assert.equal((await call('POST','/api/account/register',{origin:'https://192.0.2.1:30006','content-type':'application/json'},'{}')).status,403);
+  const issued=createApiCredentials({db}).create(account.id,{name:'test',scopes:['read'],expiresAt:Date.now()+3600000});
+  assert.equal((await call('GET','/api/cli/workspaces',{authorization:`Bearer ${issued.token}`})).status,200);
+  assert.equal((await call('GET','/api/cli/workspaces',{authorization:`Bearer ${issued.token}`,cookie:'untrusted=x'})).status,403);
+  assert.equal((await call('POST','/api/auth/login',{origin:'https://192.0.2.1:30007','content-type':'application/json'},'{}')).status,403);
+  const login=await call('POST','/api/auth/login',{origin:'https://192.0.2.1:30006','content-type':'application/json'},JSON.stringify({password:'test-admin-password'}));
+  assert.equal(login.status,200);const cookie=login.headers['set-cookie'][0].split(';')[0];
+  const current=await call('GET','/api/platform/settings',{cookie,'sec-fetch-site':'same-origin'});assert.equal(current.status,200);assert.equal(JSON.parse(current.body).registrationEnabled,false);
+  const settings={registrationEnabled:true,retention:{mode:'long-term',days:null,notifyBeforeDays:null},defaultQuotas:{maxApps:2,maxStorageBytes:1000,maxUploadBytes:1000}};
+  const changed=await call('PUT','/api/platform/settings',{origin:'https://192.0.2.1:30006',cookie,'content-type':'application/json'},JSON.stringify(settings));
+  assert.equal(changed.status,409);
+  const user=await call('POST','/api/account/login',{origin:'https://192.0.2.1:30006','content-type':'application/json'},JSON.stringify({email:'person@example.org',password:'a sufficiently long password'}));
+  assert.equal(user.status,200);const userCookie=user.headers['set-cookie'][0].split(';')[0];
+  const spaces=await call('GET','/api/workspaces',{cookie:userCookie,'sec-fetch-site':'same-origin'});assert.equal(spaces.status,200);const space=JSON.parse(spaces.body)[0];
+  const boundary='hostletBoundary';const multipart=`--${boundary}\r\nContent-Disposition: form-data; name="title"\r\n\r\nIP demo\r\n--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="index.html"\r\nContent-Type: text/html\r\n\r\n<h1>hello</h1>\r\n--${boundary}--\r\n`;
+  const upload=await call('POST',`/api/workspaces/${space.id}/pages`,{origin:'https://192.0.2.1:30006',cookie:userCookie,'content-type':`multipart/form-data; boundary=${boundary}`},multipart);
+  assert.equal(upload.status,201);const id=JSON.parse(upload.body).page.id;
+  const ticket=await call('POST',`/api/host/${id}/tickets`,{origin:'https://192.0.2.1:30006',cookie:userCookie,'content-type':'application/json'},'{}');assert.equal(ticket.status,201);
+  const contentCall=(method,url,headers={},body)=>new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port:content.address().port,path:url,method,headers:{host:'192.0.2.1:30007',...headers}},res=>{let data='';res.on('data',chunk=>data+=chunk);res.on('end',()=>resolve({status:res.statusCode,body:data,headers:res.headers}));});req.on('error',reject);req.end(body);});
+  assert.equal((await contentCall('GET',`/p/${id}/`)).status,401);
+  const exchange=await contentCall('POST',`/p/${id}/__host/exchange`,{origin:'https://192.0.2.1:30006','content-type':'application/x-www-form-urlencoded'},new URLSearchParams({ticket:JSON.parse(ticket.body).ticket}).toString());
+  assert.equal(exchange.status,303);const contentCookie=exchange.headers['set-cookie'][0].split(';')[0];
+  const page=await contentCall('GET',`/p/${id}/`,{cookie:contentCookie});assert.equal(page.status,200);assert.match(page.body,/hello/);
+});
