@@ -1,0 +1,37 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
+import { workspaceSchema, createWorkspaceService } from '../server/workspaces.js';
+import { workspacePagesSchema, workspacePageReleasesMigrationSql } from '../server/workspace-pages.js';
+import * as visibility from '../server/workspace-visibility.js';
+
+test('team editor requests public access to a specific revision and owner approves or rejects', t => {
+  const db=new DatabaseSync(':memory:'); t.after(()=>db.close());
+  db.exec('PRAGMA foreign_keys=ON; CREATE TABLE users(id TEXT PRIMARY KEY)');
+  assert.equal(typeof visibility.publicationReviewSchema,'string');
+  db.exec(workspaceSchema); db.exec(workspacePagesSchema); db.exec(workspacePageReleasesMigrationSql); db.exec(visibility.workspaceVisibilitySchema); db.exec(visibility.publicationReviewSchema);
+  db.exec("INSERT INTO users VALUES ('owner'),('editor'),('viewer'); INSERT INTO workspaces VALUES ('team','Team','team','owner','now'); INSERT INTO workspace_members VALUES ('team','owner','owner','now'),('team','editor','editor','now'),('team','viewer','viewer','now')");
+  const page='w-'+'a'.repeat(32); db.prepare('INSERT INTO workspace_page_ids VALUES (?)').run(page);
+  db.prepare('INSERT INTO workspace_pages VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(page,'team','owner','title','private',page,'1-aaaaaaaaaa','index.html','html','x.html',1,1,'now','now');
+  db.prepare('INSERT INTO workspace_page_revisions VALUES (?,0)').run(page);
+  const ws=createWorkspaceService(db), service=visibility.createWorkspaceVisibilityService({db,authorize:ws.authorize,audit:ws.recordPageAudit});
+  assert.throws(()=>service.set('team','editor',page,'public'),e=>e.code==='FORBIDDEN');
+  assert.throws(()=>service.submitReview('team','viewer',page),e=>e.code==='FORBIDDEN');
+  assert.equal(service.submitReview('team','editor',page).review.status,'pending');
+  assert.throws(()=>service.decideReview('team','editor',page,'approve',''),e=>e.code==='FORBIDDEN');
+  db.prepare('UPDATE workspace_page_revisions SET revision=1 WHERE page_id=?').run(page);
+  assert.equal(service.get('team','viewer',page).review.status,'stale');
+  assert.throws(()=>service.decideReview('team','owner',page,'approve',''),e=>e.code==='CONFLICT');
+  assert.equal(service.publicPage(page),null);
+  service.submitReview('team','editor',page);
+  assert.equal(service.decideReview('team','owner',page,'reject','需要修改').review.status,'rejected');
+  service.submitReview('team','editor',page);
+  db.exec("CREATE TRIGGER reject_review_audit BEFORE INSERT ON workspace_audit WHEN NEW.action='page.review_approved' BEGIN SELECT RAISE(ABORT,'audit failure'); END");
+  assert.throws(()=>service.decideReview('team','owner',page,'approve',''),/audit failure/);
+  assert.equal(service.publicPage(page),null); assert.equal(service.get('team','owner',page).review.status,'pending');
+  db.exec('DROP TRIGGER reject_review_audit');
+  assert.equal(service.decideReview('team','owner',page,'approve','可以').visibility,'public');
+  assert.equal(service.publicPage(page).id,page);
+  assert.throws(()=>db.prepare('UPDATE workspace_pages SET release_id=? WHERE id=?').run('2-bbbbbbbbbb',page),/PUBLIC_REVIEW_REQUIRED/);
+  assert.ok(db.prepare("SELECT count(*) n FROM workspace_audit WHERE action='page.review_approved'").get().n);
+});

@@ -162,6 +162,13 @@ export function createWorkspacePagesService({ db, workspaceService, storage, quo
   return {
     authorize: auth,
     uploadTempDir: path.join(storage.root, 'tmp'),
+    publicationFingerprint(workspace, pageId, file, fields) {
+      if (!file?.originalname) throw new ValidationError('File is required.');
+      const type=sourceTypeFromFilename(file.originalname);
+      const entry=entryFor(fields,type) ?? null;
+      const values=pageId ? [expectedRevision(fields.revision)] : [validateTitle(fields.title),privateOnly(fields.accessMode ?? 'private')];
+      return crypto.createHash('sha256').update(JSON.stringify([pageId ? 'replace' : 'create',workspace,pageId || null,...values,entry,file.originalname,file.size,file.digest])).digest('hex');
+    },
     beginUpload(workspace,actor,filename,contentLength,pageId,guard = () => {},source = 'web') {
       if (typeof guard !== 'function') throw new TypeError('Invalid upload guard');
       if (!['web','cli'].includes(source)) throw new TypeError('Invalid upload source');
@@ -179,7 +186,7 @@ export function createWorkspacePagesService({ db, workspaceService, storage, quo
     },
     list(workspace, actor) { auth(workspace, actor, 'view'); return db.prepare('SELECT p.*,r.revision FROM workspace_pages p JOIN workspace_page_revisions r ON r.page_id=p.id WHERE p.workspace_id=? ORDER BY p.created_at,p.id').all(workspace).map(metadata); },
     get(workspace, actor, id) { auth(workspace, actor, 'view'); return metadata(find(workspace, id)); },
-    async create(workspace, actor, file, fields = {}, reservation) {
+    async create(workspace, actor, file, fields = {}, reservation, onCommit = () => {}, cleanup = {}) {
       auth(workspace, actor, 'edit');
       if (!file?.path || !file.originalname) throw new ValidationError('File is required.');
       const held=pending.get(reservation?.id);
@@ -204,14 +211,14 @@ export function createWorkspacePagesService({ db, workspaceService, storage, quo
           addRelease(id, release);
           workspaceService.recordPageAudit?.(workspace,actor,'page.created',id,release.releaseId);
           if (held.source==='cli') workspaceService.recordPageAudit?.(workspace,actor,'page.cli_published',id,release.releaseId);
-          return metadata(find(workspace, id));
+          const page=metadata(find(workspace, id)); onCommit(page); return page;
         });
         committed=true;
         pending.delete(held.id);
         try { db.prepare('DELETE FROM workspace_publication_journal WHERE staging_id=?').run(id); } catch { /* Startup recovery preserves committed pages. */ }
         return result;
       } catch (error) {
-        if (owned && !committed) { await storage.removePage(id); if (journaled) db.prepare('DELETE FROM workspace_publication_journal WHERE staging_id=?').run(id); }
+        if (owned && !committed) { try { await storage.removePage(id); if (journaled) db.prepare('DELETE FROM workspace_publication_journal WHERE staging_id=?').run(id); } catch (cleanupError) { cleanup.failed=true; throw cleanupError; } }
         throw error;
       }
     },
@@ -219,7 +226,7 @@ export function createWorkspacePagesService({ db, workspaceService, storage, quo
       auth(workspace, actor, 'view'); const page = find(workspace, id);
       return db.prepare('SELECT * FROM workspace_page_releases WHERE page_id=? ORDER BY created_at DESC,release_id DESC').all(id).map(r => releaseMetadata(r, page.release_id));
     },
-    async replace(workspace, actor, id, file, fields = {}, reservation) {
+    async replace(workspace, actor, id, file, fields = {}, reservation, onCommit = () => {}, cleanup = {}) {
       auth(workspace, actor, 'edit'); const initial = find(workspace, id);
       const revision = expectedRevision(fields.revision);
       if (initial.revision !== revision) fail('CONFLICT');
@@ -253,20 +260,20 @@ export function createWorkspacePagesService({ db, workspaceService, storage, quo
           // Destination parent must already exist; never recreate a concurrently deleted page.
           fs.renameSync(release.releaseDir, dest);
           moved=dest; destinationClean=false;
-          return metadata(find(workspace, id));
+          const result=metadata(find(workspace, id)); onCommit(result); return result;
         });
         committed=true;
         destinationClean=true;
         pending.delete(held.id);
         return result;
       } catch (error) {
-        if (moved && !committed) { await fs.promises.rm(moved, {recursive:true,force:true}); destinationClean=true; }
+        if (moved && !committed) { try { await fs.promises.rm(moved, {recursive:true,force:true}); destinationClean=true; } catch (cleanupError) { cleanup.failed=true; throw cleanupError; } }
         throw error;
       } finally {
         if (owned) {
           if (committed) { try { await storage.removePage(stagingId); cleaned=true; } catch { /* Startup recovery handles the recorded directory. */ } }
-          else { await storage.removePage(stagingId); cleaned=true; }
-          if (cleaned && destinationClean && journaled) { try { db.prepare('DELETE FROM workspace_publication_journal WHERE staging_id=?').run(stagingId); } catch { /* Startup recovery completes cleanup. */ } }
+          else { try { await storage.removePage(stagingId); cleaned=true; } catch (cleanupError) { cleanup.failed=true; throw cleanupError; } }
+          if (cleaned && destinationClean && journaled) { try { db.prepare('DELETE FROM workspace_publication_journal WHERE staging_id=?').run(stagingId); } catch { if (!committed) cleanup.failed=true; } }
         }
       }
     },

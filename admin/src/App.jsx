@@ -66,7 +66,7 @@ function AccessSummary({ publicCount, privateCount, total }) {
   );
 }
 
-export default function App() {
+export default function App({ basePath = "/console" } = {}) {
   const language = useLocale();
   const [checkingSession, setCheckingSession] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
@@ -133,7 +133,7 @@ export default function App() {
       loadPages();
       fetch("/api/features")
         .then((response) => response.ok ? response.json() : null)
-        .then((features) => setPlatformEnabled(Boolean(hostingConfig(features))))
+        .then((features) => setPlatformEnabled(Boolean(features?.multiuser && hostingConfig(features))))
         .catch(() => setPlatformEnabled(false));
     }
   }, [signedIn, loadPages]);
@@ -256,6 +256,7 @@ export default function App() {
         signedIn
         platformEnabled={platformEnabled}
         onLogout={handleLogout}
+        basePath={basePath}
       >
         <div className="console-page">
           <section className="console-hero" aria-labelledby="overview-heading">

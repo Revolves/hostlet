@@ -24,7 +24,7 @@
 
 可以研究将每个页面放入强制沙箱，使其运行在不透明 origin：页面脚本仍可能运行，但通常无法使用原有的 `localStorage` 等同源存储；资源路径、外部接口、登录态、分享和下载也需逐项验证。它不自动继承现有私有资源逐项鉴权的保障。因此该方式最多是一个有明确兼容性限制的候选方案，尚非经过验证的完整实现。
 
-2026-10-30 本机 Chrome 隔离实验使用 `Content-Security-Policy: sandbox allow-scripts` 和临时回环 HTTP 服务：脚本执行成功，向允许跨域的本机模拟 API 发起 `fetch` 成功；`localStorage`、`sessionStorage` 和 IndexedDB 均抛出 `SecurityError`。实验脚本为 `tmp/ip-sandbox-probe.cjs`，仅测试浏览器行为，不证明跨应用安全、生产 HTTPS、真实外部接口或产品整体可用。此结果不满足此前对浏览器存储的需求。
+2026-10-30 本机 Chrome 隔离实验使用 `Content-Security-Policy: sandbox allow-scripts` 和临时回环 HTTP 服务：脚本执行成功，向允许跨域的本机模拟 API 发起 `fetch` 成功；`localStorage`、`sessionStorage` 和 IndexedDB 均抛出 `SecurityError`。实验脚本为一次性临时脚本（已清理），仅测试浏览器行为，不证明跨应用安全、生产 HTTPS、真实外部接口或产品整体可用。此结果不满足此前对浏览器存储的需求。
 
 IP 上的 HTTPS 可以使用针对 IP 的证书或自签名证书，但证书是否受客户端信任取决于实际签发和客户端配置。HTTP 公网访问无法保护账号、分享链接和上传内容的传输。注册邮件中的链接也必须指向用户实际能够访问的地址。
 

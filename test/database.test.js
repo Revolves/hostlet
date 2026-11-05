@@ -33,7 +33,7 @@ test('new and legacy databases are versioned idempotently without changing priva
   for (const filename of [file, path.join(dir, 'new.sqlite')]) {
     for (let i = 0; i < 2; i++) {
       const db = openDatabase(filename);
-      assert.equal(db.prepare('PRAGMA user_version').get().user_version, 24);
+      assert.equal(db.prepare('PRAGMA user_version').get().user_version, 27);
       if (filename === file) assert.deepEqual({ ...db.prepare('SELECT access_mode, release_dir FROM pages').get() }, { access_mode: 'private', release_dir: '/old/path' });
       db.close();
     }
@@ -42,17 +42,17 @@ test('new and legacy databases are versioned idempotently without changing priva
 
 test('version 20 upgrades to team audit without altering existing workspaces', t => {
   const file=path.join(temp(t),'v20.sqlite');let db=openDatabase(file);
-  db.exec("INSERT INTO users(id,email,password_hash,created_at) VALUES ('u','u@example.org','hash',1); INSERT INTO workspaces VALUES ('w','Team','team','u','now'); INSERT INTO workspace_members VALUES ('w','u','owner','now'); DROP TRIGGER api_credentials_password_change; DROP TABLE api_credentials; DROP TABLE workspace_audit; PRAGMA user_version=20;");db.close();
-  db=openDatabase(file);assert.equal(db.prepare('PRAGMA user_version').get().user_version,24);
+  db.exec("INSERT INTO users(id,email,password_hash,created_at) VALUES ('u','u@example.org','hash',1); INSERT INTO workspaces VALUES ('w','Team','team','u','now'); INSERT INTO workspace_members VALUES ('w','u','owner','now'); DROP TRIGGER workspace_public_team_release_guard; DROP TABLE workspace_publication_review; DROP TRIGGER publication_idempotency_account_deleted; DROP TRIGGER publication_idempotency_workspace_deleted; DROP TABLE publication_idempotency; DROP TRIGGER api_credentials_password_change; DROP TABLE api_credentials; DROP TABLE workspace_audit; PRAGMA user_version=20;");db.close();
+  db=openDatabase(file);assert.equal(db.prepare('PRAGMA user_version').get().user_version,27);
   assert.equal(db.prepare('SELECT name FROM workspaces WHERE id=?').get('w').name,'Team');
   assert.equal(db.prepare('SELECT count(*) n FROM workspace_audit').get().n,0);db.close();
 });
 
 test('version 21 audit events survive adding application references', t => {
   const file=path.join(temp(t),'v21.sqlite');let db=openDatabase(file);
-  db.exec("INSERT INTO users(id,email,password_hash,created_at) VALUES ('u','u@example.org','hash',1); INSERT INTO workspaces VALUES ('w','Team','team','u','now'); INSERT INTO workspace_audit(workspace_id,actor_id,action,created_at) VALUES ('w','u','workspace.created','now'); DROP TRIGGER api_credentials_password_change; DROP TABLE api_credentials; ALTER TABLE workspace_audit DROP COLUMN resource_id; ALTER TABLE workspace_audit DROP COLUMN page_id; PRAGMA user_version=21;");db.close();
+  db.exec("INSERT INTO users(id,email,password_hash,created_at) VALUES ('u','u@example.org','hash',1); INSERT INTO workspaces VALUES ('w','Team','team','u','now'); INSERT INTO workspace_audit(workspace_id,actor_id,action,created_at) VALUES ('w','u','workspace.created','now'); DROP TRIGGER workspace_public_team_release_guard; DROP TABLE workspace_publication_review; DROP TRIGGER publication_idempotency_account_deleted; DROP TRIGGER publication_idempotency_workspace_deleted; DROP TABLE publication_idempotency; DROP TRIGGER api_credentials_password_change; DROP TABLE api_credentials; ALTER TABLE workspace_audit DROP COLUMN resource_id; ALTER TABLE workspace_audit DROP COLUMN page_id; PRAGMA user_version=21;");db.close();
   db=openDatabase(file);const event=db.prepare('SELECT action,page_id,resource_id FROM workspace_audit').get();
-  assert.equal(db.prepare('PRAGMA user_version').get().user_version,24);assert.equal(event.action,'workspace.created');assert.equal(event.page_id,null);assert.equal(event.resource_id,null);db.close();
+  assert.equal(db.prepare('PRAGMA user_version').get().user_version,27);assert.equal(event.action,'workspace.created');assert.equal(event.page_id,null);assert.equal(event.resource_id,null);db.close();
 });
 
 test('unknown or partial schemas and future versions fail without changes', (t) => {
@@ -108,7 +108,7 @@ test('migration waits for an older writer, then concurrent starters serialize', 
   for (const result of results) assert.equal(result.code, 0, result.err);
   const db = openDatabase(file);
   assert.equal(db.prepare('SELECT title FROM pages').get().title, 'committed by old writer');
-  assert.equal(db.prepare('PRAGMA user_version').get().user_version, 24);
+  assert.equal(db.prepare('PRAGMA user_version').get().user_version, 27);
   db.close();
 });
 

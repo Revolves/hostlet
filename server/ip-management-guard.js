@@ -38,12 +38,16 @@ export function createIpManagementGuard({ ipHosting = null, bearerOnlyRoutes = [
 
     const origin = req.headers.origin;
     const site = req.headers['sec-fetch-site'];
+    const shareNavigation = req.method === 'GET' && req.path === '/share' && origin === undefined &&
+      ['cross-site','same-site'].includes(site) && req.headers['sec-fetch-mode'] === 'navigate' && req.headers['sec-fetch-dest'] === 'document';
+    if (shareNavigation) return next();
     if (origin !== undefined && origin !== management.origin) return reject();
     if (site !== undefined && !['same-origin', 'none'].includes(site)) return reject();
 
     const hasFetchMetadata = req.rawHeaders.some((name, i) => i % 2 === 0 && name.toLowerCase().startsWith('sec-fetch-'));
     const cliWorkspacePath = enableCli === true && (
       (req.method === 'GET' && /^\/api\/cli\/workspaces(?:\/[A-Za-z0-9_-]+\/pages(?:\/[A-Za-z0-9_-]+(?:\/releases)?)?)?$/.test(req.path)) ||
+      (req.method === 'GET' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(req.path)) ||
       (req.method === 'POST' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages(?:\/[A-Za-z0-9_-]+\/replace)?$/.test(req.path))
     );
     const isCli = origin === undefined && !hasFetchMetadata && count('cookie') === 0 &&

@@ -4,7 +4,7 @@
 
 Your website belongs to more than any one product.
 
-An open-source platform for hosting and sharing static frontend applications, with personal and team workspaces. It uses Express, SQLite and a React/Vite management interface. The original single-administrator mode is also available.
+An open-source platform for hosting and sharing static frontend applications, with personal and team workspaces. It uses Express, SQLite and a React/Vite workspace interface. The original single-administrator mode is also available.
 
 The multiuser implementation is under development and requires deployment and security acceptance before public use. See [Chinese quick start](README.zh-CN.md) and [deployment guidance](docs/deployment.md).
 
@@ -26,7 +26,10 @@ npm run build
 npm start
 ```
 
-- Admin: http://localhost:3000
+- Public site: http://localhost:3000
+- Workspace: http://localhost:3000/workspace (account workspace in multiuser mode, page manager in single-admin mode)
+- Page-management workspace: http://localhost:3000/console
+- Platform administration: http://localhost:3000/platform-admin (multiuser hosting only)
 - Hosted pages: http://localhost:8080/p/example/
 - Development: `npm run dev`, then http://localhost:5173
 - Verification: `npm test` and `npm run build`

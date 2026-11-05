@@ -18,7 +18,7 @@ npm run build
 npm start
 ```
 
-管理入口是 `http://localhost:3000`，托管页面使用 `http://localhost:8080/p/<路径>/`。单管理员私有页面使用管理员密码，不适合把该密码交给其他人。使用 `npm test` 执行自动化测试。
+官网前台位于 `http://localhost:3000`，展示当前实例已公开的应用与累计访问数；统一工作台位于 `http://localhost:3000/workspace`，多用户模式下进入账户与团队工作台，单管理员模式下进入页面管理。实例页面管理工作区位于 `http://localhost:3000/console`，平台管理位于 `http://localhost:3000/platform-admin`，托管页面使用 `http://localhost:8080/p/<路径>/`。公开应用只在访客成功打开其入口文档时计数，静态资源请求、HEAD 请求、私有分享和预览不计入；访问计数保存在 `data/hostlet.sqlite` 的 `public_page_visits` 表中。单管理员私有页面使用管理员密码，不适合把该密码交给其他人。使用 `npm test` 执行自动化测试。
 
 ## 配置多用户与自部署
 
@@ -39,10 +39,17 @@ node cli/hostlet.js workspaces
 node cli/hostlet.js pages --workspace WORKSPACE_ID
 node cli/hostlet.js versions --workspace WORKSPACE_ID --page PAGE_ID
 node cli/hostlet.js publish ./dist --workspace WORKSPACE_ID --title "Demo" --json
+node cli/hostlet.js publish-status --workspace WORKSPACE_ID --request-id REQUEST_ID --json
 ```
 
 支持 HTML、ZIP 和目录，默认创建私有应用；使用 `--entry` 指定 ZIP 入口。更新已有应用时添加 `--page PAGE_ID --revision REVISION`，修订号可从应用接口读取。结果包含应用和版本标识及管理页地址，私有应用仍需在管理页面授权或创建分享。命令不自动公开应用。目录不能包含隐藏文件、`node_modules` 或符号链接；建议发布经过检查的构建输出。仅 HTTPS 可用于远程服务，HTTP 仅允许本机回环测试。令牌可从账户页面撤销，密码变更也会撤销令牌。
 
-此功能尚未提供 npm 发布包、幂等重试、MCP 或 Skill；网络中断时先检查应用列表，避免重试产生重复应用。接口的限流为单进程限制，公开部署仍需入口限流。
+团队编辑者可将私有应用提交给团队所有者审核公开；所有者可批准、驳回或直接公开。审核绑定提交时的版本，内容更改后需要重新提交。公开的团队应用须先设为私有，才能更换或回滚版本。私有分享仍可用于预览，个人空间可直接公开。
 
-Agent 使用时应先确认目标实例、工作空间和待发布目录；检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回管理页地址、应用 ID 和版本；如果响应丢失，先通过管理页面核对结果再决定是否重试。
+CLI 在发送前将请求 ID 写入标准错误（使用 `--json` 时也如此），并为上传文件发送 SHA-256 和字节数。可使用 `--request-id REQUEST_ID` 复用请求 ID；ID 须为 22–128 位字母、数字、`_` 或 `-`。目录归档使用固定顺序和元数据，以便相同内容生成相同字节。请保存请求 ID，并确保重试的文件、文件名、标题、入口、目标应用和修订号不变；更改内容或选项时应使用新的请求 ID。
+
+网络中断或响应无法确认时，不代表发布成功或失败。先用上面的 `publish-status` 查询：`succeeded` 是已提交结果，`in_progress` 应稍后再查，`interrupted` 可用相同 ID 和内容重试，`not_found` 也不能证明请求不会到达，仍应使用相同 ID 重试。示例：`node cli/hostlet.js publish ./dist --workspace WORKSPACE_ID --title "Demo" --request-id REQUEST_ID --json`。请求 ID 不是凭据；查询仍需要有效令牌和当前空间权限。
+
+发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。此功能尚未提供 npm 发布包、MCP 或 Skill；接口的限流为单进程限制，公开部署仍需入口限流。
+
+Agent 使用时应先确认目标实例、工作空间和待发布目录；检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回工作台地址、应用 ID 和版本；如果响应丢失，保存请求 ID 并按上述状态查询流程处理。

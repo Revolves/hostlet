@@ -285,6 +285,13 @@ try {
   const role=page.getByLabel('Your role browser-member@example.org');
   await Promise.all([page.waitForResponse(response=>response.request().method()==='PATCH' && response.url().includes('/members/') && response.status()===204),role.selectOption('editor')]);
   assert.equal(await patchTitle(),200);
+  await member.getByRole('button',{name:'Refresh',exact:true}).first().click(); await memberTeam.waitFor(); await memberTeam.click();
+  await memberApp.getByRole('button',{name:'Submit for review'}).click(); await memberApp.getByText('Review pending').waitFor();
+  await page.getByRole('button',{name:'Refresh applications'}).click(); await teamRow.getByText('Review pending').waitFor();
+  page.once('dialog',dialog=>dialog.accept('Approved')); await teamRow.getByRole('button',{name:'Approve publication'}).click();
+  await teamRow.getByText('Review approved').waitFor();
+  page.once('dialog',dialog=>dialog.accept()); await teamRow.getByRole('button',{name:'Make private'}).click();
+  await teamRow.getByRole('button',{name:'Make public'}).waitFor();
   await Promise.all([page.waitForResponse(response=>response.request().method()==='PATCH' && response.url().includes('/members/') && response.status()===204),role.selectOption('viewer')]);
   assert.equal(await patchTitle(),403);
   page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Leave team'}).click();

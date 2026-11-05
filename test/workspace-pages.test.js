@@ -16,7 +16,7 @@ import { createUploader } from '../server/upload.js';
 import { workspacePagesSchema, workspacePageReleasesMigrationSql, createWorkspacePagesService, createWorkspaceQuotaService } from '../server/workspace-pages.js';
 import { createWorkspacePagesRouter } from '../server/workspace-pages-router.js';
 import { quotaMigrationSql } from '../server/quotas.js';
-import { workspaceVisibilitySchema, createWorkspaceVisibilityService } from '../server/workspace-visibility.js';
+import { workspaceVisibilitySchema, publicationReviewSchema, createWorkspaceVisibilityService } from '../server/workspace-visibility.js';
 import { releaseCleanupSchema, createReleaseCleanup } from '../server/release-cleanup.js';
 import { createMaintenanceGate } from '../server/maintenance.js';
 import { deletionJournalSql, createWorkspaceDeletionService } from '../server/workspace-deletion.js';
@@ -27,7 +27,7 @@ async function setup(t, options = {}) {
   const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'workspace-pages-'));
   const db = new DatabaseSync(path.join(root, 'test.sqlite'));
   db.exec('PRAGMA foreign_keys=ON; CREATE TABLE users (id TEXT PRIMARY KEY);');
-  db.exec(workspaceSchema); db.exec(workspacePagesSchema); db.exec(workspacePageReleasesMigrationSql); db.exec(quotaMigrationSql); db.exec(workspaceVisibilitySchema); db.exec(releaseCleanupSchema);
+  db.exec(workspaceSchema); db.exec(workspacePagesSchema); db.exec(workspacePageReleasesMigrationSql); db.exec(quotaMigrationSql); db.exec(workspaceVisibilitySchema); db.exec(publicationReviewSchema); db.exec(releaseCleanupSchema);
   db.exec(deletionJournalSql);
   db.exec(publicationJournalSql);
   db.exec(uploadTempJournalSql);
@@ -184,13 +184,20 @@ test('history cleanup drains active requests and rejects unauthorized users befo
   } finally {held.emit('finish');}
 });
 
-test('visibility API allows editors and reflects changes in the page list', async t => {
+test('team publication review enforces roles and protects public versions', async t => {
   const {team,call,form}=await setup(t);
   const base=`/${team}/pages`, created=await call('owner','POST',base,form());
   const id=created.body.page.id, url=`${base}/${id}/visibility`;
   assert.equal((await call('viewer','PATCH',url,{visibility:'public'})).status,403);
-  assert.equal((await call('editor','PATCH',url,{visibility:'public'})).status,200);
+  assert.equal((await call('editor','PATCH',url,{visibility:'public'})).status,403);
+  const review=`${base}/${id}/publication-review`;
+  assert.equal((await call('editor','POST',review,{})).status,200);
+  assert.equal((await call('viewer','GET',base)).body.pages[0].review.status,'pending');
+  assert.equal((await call('editor','POST',`${review}/decision`,{decision:'approve'})).status,403);
+  assert.equal((await call('owner','POST',`${review}/decision`,{decision:'approve',comment:'ok'})).status,200);
   assert.equal((await call('viewer','GET',base)).body.pages[0].visibility,'public');
+  const replacement=form(); replacement.set('revision',String(created.body.page.revision));
+  assert.equal((await call('editor','POST',`${base}/${id}/replace`,replacement)).body.code,'PUBLIC_REVIEW_REQUIRED');
   assert.equal((await call('owner','PATCH',url,{visibility:'private'})).status,200);
   assert.equal((await call('viewer','GET',base)).body.pages[0].visibility,'private');
 });

@@ -91,10 +91,11 @@ function createExchangeLimiter(options={}) {
  * cookies, proxy filtering and browser security checks are also required.
  * Hosted pages share an origin and must be mutually trusted.
  */
-export function createWorkspaceIpHostingRouter({service, shareService=null, contentHost, isSuspended, transferTimeoutMs=300000, rateLimit}) {
+export function createWorkspaceIpHostingRouter({service, shareService=null, contentHost, isSuspended, transferTimeoutMs=300000, rateLimit, onPublicVisit=null}) {
   const m=typeof contentHost==='string' && /^(\[[0-9a-f:]+\]|[0-9.]+):([1-9][0-9]{0,4})$/.exec(contentHost);
   const ip=m && (m[1].startsWith('[') ? m[1].slice(1,-1) : m[1]);
   if (!m || !net.isIP(ip) || Number(m[2])>65535 || !service || !path.isAbsolute(service.storageRoot || '') || typeof service.publicPage!=='function' || typeof service.authorize!=='function' || typeof service.exchange!=='function' || typeof isSuspended!=='function' || (shareService && (typeof shareService.exchange!=='function' || typeof shareService.authorize!=='function')) || !Number.isSafeInteger(transferTimeoutMs) || transferTimeoutMs<1 || transferTimeoutMs>3600000) throw new TypeError('Invalid IP hosting configuration');
+  if (onPublicVisit !== null && typeof onPublicVisit !== 'function') throw new TypeError('Invalid public visit recorder');
   let origin; try { origin=new URL(service.managementOrigin); } catch { throw new TypeError('Invalid management origin'); }
   if (origin.protocol!=='https:' || origin.origin!==service.managementOrigin || origin.username || origin.password) throw new TypeError('Invalid management origin');
   const router=Router(), allowExchange=createExchangeLimiter(rateLimit);
@@ -140,12 +141,20 @@ export function createWorkspaceIpHostingRouter({service, shareService=null, cont
     if(!['GET','HEAD'].includes(req.method)) return res.sendStatus(405);
     const member=cookieValue(req.headers.cookie,`iphost-member-${req.ipPage}`), share=cookieValue(req.headers.cookie,`iphost-share-${req.ipPage}`);
     if(member===false || share===false) return res.sendStatus(401);
-    const row=service.publicPage(req.ipPage) || service.authorize(req.ipPage,member) || (shareService && shareService.authorize(req.ipPage,share));
+    const publicRow=service.publicPage(req.ipPage);
+    const row=publicRow || service.authorize(req.ipPage,member) || (shareService && shareService.authorize(req.ipPage,share));
     if(!row) return res.sendStatus(401);
     // Never follow an injected service result to a different page's files.
     if(row.id!==req.ipPage) return res.sendStatus(404);
     if(!req.ipPath) return res.redirect(308,`${req.ipPrefix}/${req.originalUrl.slice(req.originalUrl.split('?')[0].length)}`);
-    const file=readFile(service.storageRoot,row,req.ipPath.slice(1)); if(!file) return res.sendStatus(404);
+    const requested=req.ipPath.slice(1);
+    const file=readFile(service.storageRoot,row,requested); if(!file) return res.sendStatus(404);
+    const entry=encodedEntry(row.entry_file);
+    const entryDocument=publicRow && req.method==='GET' && (req.ipPath === '/' || requested === entry);
+    if(entryDocument && onPublicVisit) {
+      try { onPublicVisit(req.ipPage,{method:req.method,entryDocument:true}); }
+      catch(error) { console.error('Public visit count failed.'); }
+    }
     const query=req.originalUrl.slice(req.originalUrl.split('?')[0].length);
     if(req.ipPath==='/') {const entry=encodedEntry(row.entry_file);if(entry && entry.includes('/')) return res.redirect(302,`${req.ipPrefix}/${entry}${query}`);}
     if(file.redirect) return res.redirect(308,`${req.ipPrefix}${req.ipPath}/${query}`);

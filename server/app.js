@@ -35,6 +35,7 @@ import { createReleaseCleanup } from "./release-cleanup.js";
 import { createMaintenanceGate } from "./maintenance.js";
 import { createWorkspaceDeletionService } from "./workspace-deletion.js";
 import { createPublicationRecovery } from "./publication-recovery.js";
+import { createPublicationIdempotency } from "./publication-idempotency.js";
 import { createUploadTempJournal } from "./upload-temp-recovery.js";
 import { createRetentionService } from "./retention.js";
 import { createRetentionCoordinator } from "./retention-coordinator.js";
@@ -47,6 +48,7 @@ import { createPlatformAdminService } from "./platform-admin.js";
 import { createPlatformAdminRouter } from "./platform-admin-router.js";
 import { createSecurityLog, createSecurityRequestLogger } from "./security-log.js";
 import { createOperationsStatus } from "./operations-status.js";
+import { createPublicDirectoryService } from "./public-directory.js";
 import { DEFAULT_QUOTAS } from "./quotas.js";
 import { FileSiteStorage, sourceTypeFromFilename } from "./storage.js";
 import { signGrant } from "./tokens.js";
@@ -471,7 +473,7 @@ function createAdminRouter({ config, pages, releases, storage, uploader, auth })
   return router;
 }
 
-function createPagesApp({ config, pages, pageLogin, workspaceHostingRouter, maintenance, securityLog }) {
+function createPagesApp({ config, pages, pageLogin, workspaceHostingRouter, maintenance, securityLog, publicDirectory }) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustedProxies.length ? config.trustedProxies : false);
@@ -566,6 +568,15 @@ function createPagesApp({ config, pages, pageLogin, workspaceHostingRouter, main
       return next();
     }
 
+    const isEntryDocument = !requestedPath && page.accessMode === "public" && !accessToken;
+    if (isEntryDocument && req.method === "GET" && publicDirectory) {
+      try {
+        publicDirectory.recordVisit({ kind: "legacy", pageId: page.id, method: req.method, entryDocument: true });
+      } catch (error) {
+        console.error("Public visit count failed.");
+      }
+    }
+
     const extension = path.extname(finalPath).toLowerCase();
     res.type(CONTENT_TYPES[extension] || "application/octet-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -618,6 +629,21 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   let platformAdmin = null;
   let retentionCoordinator = null, retentionScheduler = null, ephemeralCleanupScheduler = null;
   const hostingConfig = config.ipHosting || (config.hosting ? { ...config.hosting, appDomain: config.hosting.appDomain.replace(/:443$/, "") } : null);
+  const legacyUrl = (slug) => `${config.publicBaseUrl}/p/${slug}/`;
+  const workspaceUrl = config.ipHosting
+    ? (pageId) => `${config.ipHosting.contentOrigin}/p/${pageId}/`
+    : config.hosting && hostingConfig
+      ? (pageId) => `https://${pageId}.${hostingConfig.appDomain}/`
+      : () => null;
+  const publicDirectory = createPublicDirectoryService({
+    db,
+    legacyUrl,
+    workspaceUrl,
+  });
+  const recordVisit = (kind, pageId, details) => {
+    try { publicDirectory.recordVisit({ kind, pageId, ...details }); }
+    catch (error) { console.error("Public visit count failed."); }
+  };
 
   const admin = express();
   admin.disable("x-powered-by");
@@ -644,6 +670,10 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   });
   const registrationEnabled = () => Boolean(!config.ipHosting && accountSender && (platformAdmin && db.prepare("SELECT 1 FROM platform_settings WHERE id=1").get() ? platformAdmin.getSettings().registrationEnabled : config.registrationEnabled));
   admin.get("/api/features", (_req, res) => res.json({ multiuser: Boolean(accountSender), registration: registrationEnabled(), hostingDomain: accountSender ? hostingConfig?.appDomain || null : null, ipHostingOrigin: accountSender ? config.ipHosting?.contentOrigin || null : null, retention: platformAdmin ? platformAdmin.getSettings().retention : {mode:'long-term',days:null,notifyBeforeDays:null}, retentionActive: Boolean(retentionScheduler?.isRunning()) }));
+  admin.get("/api/public/apps", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json(publicDirectory.list());
+  });
   if (accountSender) {
     ephemeralCleanupScheduler=createRetentionScheduler({coordinator:createEphemeralCleanup({db}),intervalMs:60000,
       onResult:()=>operationsStatus.record('temporaryCleanup',true),
@@ -671,7 +701,7 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
     const legacyMigration = createLegacyMigration({db,dataDir:config.dataDir,assertOffline:maintenance.isQuiescent});
     const publicationRecovery=createPublicationRecovery({db,storageRoot:workspaceStorage.root,assertQuiescent:maintenance.isQuiescent});
     const tempFiles=createUploadTempJournal({db,storageRoot:workspaceStorage.root,assertQuiescent:maintenance.isQuiescent});
-    await maintenance.runExclusive(() => { legacyMigration.recover(); workspaceDeletion.recover(); accountDeletion.recover(); publicationRecovery.recover(); tempFiles.recover(); });
+    await maintenance.runExclusive(() => { legacyMigration.recover(); workspaceDeletion.recover(); accountDeletion.recover(); publicationRecovery.recover(); tempFiles.recover(); createPublicationIdempotency(db).recover(); });
     const releaseCleanup = createReleaseCleanup({ db, storageRoot: workspaceStorage.root, authorize: workspaceService.authorize, audit: workspaceService.recordPageAudit });
     releaseCleanup.recover();
     const workspacePages = createWorkspacePagesService({ db, workspaceService, storage: workspaceStorage, quotaDefaults: () => platformAdmin ? platformAdmin.getSettings().defaultQuotas : DEFAULT_QUOTAS });
@@ -722,22 +752,24 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       if (++cliGlobal.count>1000 || !bucket || ++bucket.count>120) return res.status(429).json({code:'RATE_LIMITED'});
       const headers=req.rawHeaders.filter((_,i)=>i%2===0 && req.rawHeaders[i].toLowerCase()==='authorization');
       const match=/^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('Authorization') || '');
-      const scope=req.method==='GET' ? 'read' : 'publish';
-      const credential=headers.length===1 && match && apiCredentials.authenticate(match[1],scope);
+      const statusRoute=req.method==='GET' && /^\/[^/]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(req.path);
+      const scopes=statusRoute ? ['publish','read'] : [req.method==='GET' ? 'read' : 'publish'];
+      const authenticate=()=>match && scopes.map(scope=>apiCredentials.authenticate(match[1],scope)).find(Boolean);
+      const credential=headers.length===1 && authenticate();
       if (!credential) return res.status(401).json({code:'UNAUTHORIZED'});
       req.user={id:credential.userId};
       req.uploadSource='cli';
-      req.uploadGuard=()=>{if (!apiCredentials.authenticate(match[1],scope)) throw new WorkspaceError('FORBIDDEN');};
+      req.uploadGuard=()=>{if (!authenticate()) throw new WorkspaceError('FORBIDDEN');};
       next();
     };
     admin.use('/api/cli', (req,res,next)=>{res.set('Cache-Control','no-store');next();});
     admin.get('/api/cli/workspaces',cliUser,(req,res)=>res.json(workspaceService.listWorkspaces(req.user.id)));
     admin.use('/api/cli/workspaces',(req,res,next)=>{
       const p=req.path;
-      const readable=req.method==='GET' && /^\/[^/]+\/pages(?:\/[^/]+(?:\/releases)?)?$/.test(p);
+      const readable=req.method==='GET' && (/^\/[^/]+\/pages(?:\/[^/]+(?:\/releases)?)?$/.test(p) || /^\/[^/]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(p));
       const publish=req.method==='POST' && /^\/[^/]+\/pages(?:\/[^/]+\/replace)?$/.test(p);
       return readable || publish ? next() : res.sendStatus(404);
-    },createWorkspacePagesRouter({service:workspacePages,requireUser:cliUser,uploader:workspaceUploader,tempFiles,visibility}));
+    },createWorkspacePagesRouter({service:workspacePages,requireUser:cliUser,uploader:workspaceUploader,tempFiles,visibility,receiptFactory:()=>createPublicationIdempotency(db)}));
     if (hostingConfig) {
       platformAdmin = createPlatformAdminService({ db, defaultRegistrationEnabled: config.registrationEnabled });
       if (config.ipHosting) {
@@ -769,7 +801,9 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       const requireInstanceAdmin = (req, res, next) => services.auth.requireAdmin(req, res, () => { req.admin = { id: "instance-admin" }; next(); });
       admin.use("/api/platform", createPlatformAdminRouter({ service: platformAdmin, quotaService, operationsStatus, retentionDiagnostics, requireAdmin: requireInstanceAdmin, managementOrigin: hosting.managementOrigin }));
       const shareService = createWorkspaceShareService({ db, authorize: workspaceService.authorize, audit: workspaceService.recordPageAudit, limitAttempt: shareAttemptLimiter() });
-      const router = config.ipHosting ? createWorkspaceIpHostingRouter({service:hosting,shareService,contentHost:new URL(config.ipHosting.contentOrigin).host,isSuspended:platformAdmin.isSuspended}) : createWorkspaceHostingAppRouter({ service: hosting, shareService });
+      const router = config.ipHosting
+        ? createWorkspaceIpHostingRouter({service:hosting,shareService,contentHost:new URL(config.ipHosting.contentOrigin).host,isSuspended:platformAdmin.isSuspended,onPublicVisit:(pageId,details)=>recordVisit('workspace',pageId,details)})
+        : createWorkspaceHostingAppRouter({ service: hosting, shareService, onPublicVisit:(pageId,details)=>recordVisit('workspace',pageId,details) });
       admin.use("/api/shares", createWorkspaceShareRouter({ service: shareService, requireUser, managementOrigin: hosting.managementOrigin }));
       workspaceHostingRouter = config.ipHosting ? router : (req, res, next) => {
         const host = String(req.headers.host || "").toLowerCase();
@@ -794,6 +828,7 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   admin.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
 
   if (fs.existsSync(config.adminDistDir)) {
+    admin.get("/", (_req, res) => res.sendFile(path.join(config.adminDistDir, "index.html")));
     admin.use(express.static(config.adminDistDir, { index: false, maxAge: "1h" }));
     admin.get("/{*splat}", (_req, res) => {
       res.sendFile(path.join(config.adminDistDir, "index.html"));
@@ -822,6 +857,7 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
     workspaceHostingRouter,
     maintenance,
     securityLog,
+    publicDirectory,
   });
 
   return { admin, hosted, services, maintenance, securityLog, retentionCoordinator, retentionScheduler, ephemeralCleanupScheduler };

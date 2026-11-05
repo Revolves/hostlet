@@ -25,6 +25,12 @@ export function createUploadTempJournal({db,storageRoot,assertQuiescent}={}) {
     db.prepare('DELETE FROM workspace_upload_temp_journal WHERE id=?').run(id);
   }
   return {
+    hasResidual(id) {
+      const file=filename(id);
+      if (db.prepare('SELECT 1 FROM workspace_upload_temp_journal WHERE id=?').get(id)) return true;
+      try { fs.lstatSync(file); return true; }
+      catch (error) { if (error.code==='ENOENT') return false; throw error; }
+    },
     open(id) {
       const file=filename(id);checkDirectory(dir);
       const fd=fs.openSync(file,'wx',0o600);
@@ -36,6 +42,9 @@ export function createUploadTempJournal({db,storageRoot,assertQuiescent}={}) {
     recover() {
       if(assertQuiescent()!==true) throw new Error('Maintenance window required');
       for(const row of db.prepare('SELECT id FROM workspace_upload_temp_journal ORDER BY id').all()) remove(row.id);
+      for (const name of fs.readdirSync(dir)) {
+        if (name.startsWith('upload-') && idPattern.test(name.slice(7))) throw new Error('Unrecorded temporary upload requires manual recovery');
+      }
     }
   };
 }

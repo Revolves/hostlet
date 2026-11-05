@@ -28,6 +28,7 @@ export function createMaintenanceGate() {
       if (paused) return res.set('Retry-After','5').set('Cache-Control','no-store').status(503).send('Service temporarily unavailable');
       const release=add(); let open=true, children=0;
       req.maintenance={
+        failClosed() { failed=true; paused=true; },
         retain() {
           if (!open) throw new Error('Request already closed');
           const done=add(); children++; let released=false;

@@ -8,7 +8,7 @@ import { workspaceHostingSchema } from "./workspace-hosting.js";
 import { workspaceShareSchema } from "./workspace-shares.js";
 import { quotaMigrationSql } from "./quotas.js";
 import { platformAdminSchema } from "./platform-admin.js";
-import { workspaceVisibilitySchema } from "./workspace-visibility.js";
+import { workspaceVisibilitySchema, publicationReviewSchema } from "./workspace-visibility.js";
 import { releaseCleanupSchema } from "./release-cleanup.js";
 import { deletionJournalSql } from "./workspace-deletion.js";
 import { retentionSchema } from "./retention.js";
@@ -18,6 +18,8 @@ import { ephemeralCleanupIndexesSql } from './ephemeral-cleanup.js';
 import { uploadTempJournalSql } from './upload-temp-recovery.js';
 import { accountDeletionJournalSql } from './account-deletion.js';
 import { apiCredentialsSchema } from './api-credentials.js';
+import { publicationIdempotencySchema } from './publication-idempotency.js';
+import { publicDirectorySchema } from './public-directory.js';
 
 // Version 1 exactly represents the schema shipped before migrations existed.
 const baselineSchema = `
@@ -115,6 +117,9 @@ const migrations = [
   { version: 22, apply(db) { db.exec(workspaceAuditPageSchema); } },
   { version: 23, apply(db) { db.exec(accountDeletionJournalSql); } },
   { version: 24, apply(db) { db.exec(apiCredentialsSchema); } },
+  { version: 25, apply(db) { db.exec(publicationIdempotencySchema); } },
+  { version: 26, apply(db) { db.exec(publicationReviewSchema); } },
+  { version: 27, apply(db) { db.exec(publicDirectorySchema); } },
 ];
 export const latestDatabaseVersion = migrations.length;
 

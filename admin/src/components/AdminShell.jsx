@@ -4,6 +4,7 @@ import Brand from "./Brand.jsx";
 import LanguageSwitch from "./LanguageSwitch.jsx";
 import {
   CloseIcon,
+  GlobeIcon,
   MenuIcon,
   OverviewIcon,
   PagesIcon,
@@ -26,6 +27,7 @@ export default function AdminShell({
   signedIn = false,
   platformEnabled = false,
   onLogout,
+  basePath = "/console",
 }) {
   useLocale();
   const [navigationOpen, setNavigationOpen] = useState(false);
@@ -57,11 +59,11 @@ export default function AdminShell({
         onClick={() => setNavigationOpen(false)}
       />
 
-      <aside className="admin-sidebar" aria-label={t("Administration navigation")}>
+      <aside className="admin-sidebar" aria-label={t("Workspace navigation")}>
         <div className="admin-sidebar__top">
-          <a className="admin-sidebar__brand" href="/" aria-label="Hostlet">
+          <a className="admin-sidebar__brand" href={basePath} aria-label="Hostlet">
             <Brand compact inverse />
-            <span className="admin-sidebar__brand-label">{t("Administration")}</span>
+            <span className="admin-sidebar__brand-label">{t("Workspace")}</span>
           </a>
           <button
             className="admin-sidebar__close"
@@ -73,12 +75,12 @@ export default function AdminShell({
           </button>
         </div>
 
-        <nav className="admin-nav" aria-label={t("Administration navigation")}>
+        <nav className="admin-nav" aria-label={t("Workspace navigation")}>
           <p className="admin-nav__label">{t("Workspace")}</p>
-          <NavigationItem active={active === "overview"} href="/" icon={<OverviewIcon />}>
+          <NavigationItem active={active === "overview"} href={basePath} icon={<OverviewIcon />}>
             {t("Overview")}
           </NavigationItem>
-          <NavigationItem active={active === "library"} href="/#library" icon={<PagesIcon />}>
+          <NavigationItem active={active === "library"} href={`${basePath}#library`} icon={<PagesIcon />}>
             {t("Page library")}
           </NavigationItem>
           {platformEnabled ? (
@@ -124,13 +126,17 @@ export default function AdminShell({
             >
               <MenuIcon />
             </button>
-            <span className="admin-topbar__context">{t(active === "platform" ? "Platform administration" : "Hosting workspace")}</span>
+            <span className="admin-topbar__context">{t(active === "platform" ? "Platform administration" : "Workspace")}</span>
           </div>
           <div className="admin-topbar__actions">
             <span className="admin-topbar__status">
               <span aria-hidden="true" />
               {t("Service online")}
             </span>
+            <a className="admin-topbar__site-link" href="/">
+              <GlobeIcon size={16} />
+              <span>{t("View public site")}</span>
+            </a>
             <LanguageSwitch />
           </div>
         </header>

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { withPublicationTransaction } from './publication-idempotency.js';
 
 // Incremental migration: apply exactly once inside the host's migration
 // transaction, after workspaces exists. Enable foreign_keys on every connection.
@@ -74,7 +75,7 @@ const sync = result => { if (result && typeof result.then === 'function') throw 
 export function createQuotaService({ db, authorize, readUsage, clock = Date.now, defaultLimits = () => DEFAULT_QUOTAS, onChange = () => {} } = {}) {
   if (!db || typeof authorize !== 'function' || typeof readUsage !== 'function' || typeof clock !== 'function' || typeof defaultLimits !== 'function' || typeof onChange !== 'function') throw new TypeError('db, authorize, readUsage, clock and defaultLimits are required');
   if (db.prepare('PRAGMA foreign_keys').get().foreign_keys !== 1) throw new Error('foreign_keys must be enabled');
-  const tx = fn => { db.exec('BEGIN IMMEDIATE'); try { const result=fn(); db.exec('COMMIT'); return result; } catch (e) { try { db.exec('ROLLBACK'); } catch {} throw e; } };
+  const tx = fn => withPublicationTransaction(db, fn);
   const check = (id, actor, action) => {
     if (!idValid(id) || !idValid(actor)) fail('INVALID');
     sync(authorize(id, actor, action));

@@ -32,7 +32,7 @@ try {
   await listen(pagesServer,config.pagesPort,config.bindAddress);
   retentionScheduler?.start();
   ephemeralCleanupScheduler?.start();
-  console.log(`Hostlet admin:  http://localhost:${config.adminPort}`);
+  console.log(`Hostlet workspace: http://localhost:${config.adminPort}/workspace`);
   console.log(`Hosted pages:   ${config.publicBaseUrl}`);
 
   let stopping=false, cleanExit=false;

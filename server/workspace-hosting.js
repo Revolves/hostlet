@@ -149,8 +149,9 @@ function readFile(root, row, requestPath) {
   } catch (err) { if (['ENOENT','ENOTDIR','ELOOP','EACCES'].includes(err.code)) return null; throw err; }
 }
 
-export function createWorkspaceHostingAppRouter({ service, shareService = null, transferTimeoutMs = 300000 }) {
+export function createWorkspaceHostingAppRouter({ service, shareService = null, transferTimeoutMs = 300000, onPublicVisit = null }) {
   if (!service || !Number.isSafeInteger(transferTimeoutMs) || transferTimeoutMs < 1 || transferTimeoutMs > 3600000 || (shareService && (typeof shareService.exchange !== 'function' || typeof shareService.authorize !== 'function'))) throw new TypeError('Invalid hosting service');
+  if (onPublicVisit !== null && typeof onPublicVisit !== 'function') throw new TypeError('Invalid public visit recorder');
   const router=Router();
   router.use((req,res,next)=>{ safeHeaders(res); const hosts=req.rawHeaders.filter((_,i)=>i%2===0 && req.rawHeaders[i].toLowerCase()==='host'); const host=req.headers.host; req.hostingPage=hosts.length===1 && service.hostPage(host); if (!req.hostingPage) return res.sendStatus(421); next(); });
   router.post('/__host/exchange', express.urlencoded({extended:false,limit:'1kb',parameterLimit:2}), (req,res)=>{
@@ -165,9 +166,17 @@ export function createWorkspaceHostingAppRouter({ service, shareService = null, 
     if (!['GET','HEAD'].includes(req.method)) return res.sendStatus(405);
     const memberCookie=cookieValue(req.headers.cookie,cookieName), shareCookie=cookieValue(req.headers.cookie,shareCookieName);
     if (memberCookie===false || shareCookie===false) return res.sendStatus(401);
-    const row=service.publicPage(req.hostingPage) || service.authorize(req.hostingPage,memberCookie) || (shareService && shareService.authorize(req.hostingPage,shareCookie)); if (!row) return res.sendStatus(401);
+    const publicRow=service.publicPage(req.hostingPage);
+    const row=publicRow || service.authorize(req.hostingPage,memberCookie) || (shareService && shareService.authorize(req.hostingPage,shareCookie)); if (!row) return res.sendStatus(401);
     const raw=req.originalUrl.split('?')[0]; if (!raw.startsWith('/')) return res.sendStatus(400);
-    const file=readFile(service.storageRoot,row,raw.slice(1)); if (!file) return res.sendStatus(404);
+    const requested=raw.slice(1);
+    const file=readFile(service.storageRoot,row,requested); if (!file) return res.sendStatus(404);
+    const entry=encodedEntry(row.entry_file);
+    const entryDocument=publicRow && req.method==='GET' && (raw === '/' || requested === entry);
+    if (entryDocument && onPublicVisit) {
+      try { onPublicVisit(req.hostingPage, { method:req.method, entryDocument:true }); }
+      catch (error) { console.error('Public visit count failed.'); }
+    }
     if (raw === '/') {
       const entry=encodedEntry(row.entry_file);
       if (entry && entry.includes('/')) return res.redirect(302,`/${entry}${req.originalUrl.slice(raw.length)}`);

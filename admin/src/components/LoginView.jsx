@@ -49,7 +49,7 @@ export default function LoginView({ onLogin }) {
         </header>
 
         <div className="login__statement">
-          <p className="eyebrow">{t("Administrator access")}</p>
+          <p className="eyebrow">{t("Workspace access")}</p>
           <h1>{t("Publish your work,")}<span>{t("without the overhead.")}</span></h1>
           <p className="login__copy">
             {t("Upload a single HTML file or a complete ZIP site. Choose where it lives, decide who can see it, and share one clean link.")}
@@ -69,8 +69,12 @@ export default function LoginView({ onLogin }) {
 
       <section className="login__panel">
         <div className="login__panel-inner">
+          <a className="login__back-link" href="/">
+            <span aria-hidden="true">←</span>
+            {t("Back to public site")}
+          </a>
           <div className="login__form-heading">
-            <span className="login__form-status"><span aria-hidden="true" />{t("Secure administration")}</span>
+            <span className="login__form-status"><span aria-hidden="true" />{t("Secure workspace")}</span>
             <h2>{t("Sign in")}</h2>
             <p className="login__form-copy">{t("Enter the administrator password configured for this installation.")}</p>
           </div>
@@ -100,7 +104,7 @@ export default function LoginView({ onLogin }) {
 
           {accountEnabled ? (
             <nav className="login__account-links" aria-label={t("Related access")}>
-              <a href="/account">{t("Account and workspaces")}</a>
+              <a href="/workspace">{t("Account and workspaces")}</a>
               <a href="/report">{t("Report an application")}</a>
             </nav>
           ) : null}

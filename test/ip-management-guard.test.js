@@ -66,6 +66,15 @@ test('sensitive GET rejects cross-origin or uncertain browser requests and sends
   }
 });
 
+test('a share link can be opened as a top-level navigation from another site', async t => {
+  const send=await fixture(t,{ipHosting});
+  const headers={'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'navigate','Sec-Fetch-Dest':'document'};
+  assert.equal((await send('GET',headers,'/share')).statusCode,200);
+  assert.equal((await send('GET',{...headers,'Sec-Fetch-Site':'same-site'},'/share')).statusCode,200);
+  assert.equal((await send('GET',headers,'/api/account/me')).statusCode,403);
+  assert.equal((await send('GET',{'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'cors','Sec-Fetch-Dest':'empty'},'/share')).statusCode,403);
+});
+
 test('CLI exception is explicit, cookie-free, non-browser and limited to exact method and path', async t => {
   const send = await fixture(t, { ipHosting, bearerOnlyRoutes: [{ method: 'POST', path: '/api/cli/publish' }, { method: 'GET', path: '/api/cli/workspaces' }] });
   const authorization = `Bearer ${'a'.repeat(43)}`;
