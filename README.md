@@ -44,19 +44,35 @@ ZIP archives may contain the entry at their root or within one enclosing folder.
 
 Page settings support editing, replacement releases, version history, rollback, previews, copying links, and deletion. Replacing a release preserves the mount path. Changing its slug breaks the previous URL. Preview links expire after 15 minutes; changing the active release invalidates its previous grants, including if an earlier version is restored. Stored versions count towards the storage statistic. Single-admin legacy pages do not automatically prune history; monitor disk usage. Workspace applications are capped at 20 retained versions and provide explicit old-version deletion.
 
-## CLI (development)
+## CLI
 
-Create a 30-day API credential with read, publish, and share scopes, then set `HOSTLET_URL` and `HOSTLET_TOKEN` in the environment. Do not commit the token or write it to logs. Run the CLI from this source tree:
+The CLI is an independent package in [`cli/`](cli) and requires Node.js 22.13 or later. It has not been published to the public npm registry yet, and the package name and registry availability still need confirmation. Install it from this checkout or from a local tarball:
 
 ```sh
-node cli/hostlet.js workspaces
-node cli/hostlet.js pages --workspace WORKSPACE_ID
-node cli/hostlet.js versions --workspace WORKSPACE_ID --page PAGE_ID
-node cli/hostlet.js rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
-node cli/hostlet.js shares --workspace WORKSPACE_ID --page PAGE_ID
-node cli/hostlet.js share --workspace WORKSPACE_ID --page PAGE_ID --expires 2027-01-01T00:00:00Z --password-stdin
-node cli/hostlet.js revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
+npm install -g ./cli
+hostlet --help
+
+npm pack ./cli
+npm install -g ./hostlet-cli-0.1.0.tgz
 ```
+
+Running from source remains supported with `node cli/hostlet.js ...` (or `npm run pack:cli` to build the tarball).
+
+Create a 30-day API credential with read, publish, and share scopes, then set `HOSTLET_URL` and `HOSTLET_TOKEN` in the environment. Do not commit the token or write it to logs.
+
+```sh
+hostlet workspaces
+hostlet pages --workspace WORKSPACE_ID
+hostlet versions --workspace WORKSPACE_ID --page PAGE_ID
+hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo"
+hostlet publish-status --workspace WORKSPACE_ID --request-id REQUEST_ID
+hostlet rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
+hostlet shares --workspace WORKSPACE_ID --page PAGE_ID
+hostlet share --workspace WORKSPACE_ID --page PAGE_ID --expires 2027-01-01T00:00:00Z --password-stdin
+hostlet revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
+```
+
+`hostlet --help` lists every command. `hostlet help publish` or `hostlet publish --help` shows command options, and `hostlet --version` prints the package version. Help and version work without credentials. See [`cli/README.md`](cli/README.md) for installation, credential scopes, JSON output, and recovery details.
 
 Publishing accepts HTML, ZIP, or a directory and creates a private application by default. Rollback requires the current revision; a `CONFLICT` response means the application changed and must be refreshed. A credential must include the `share` scope to list, create, or revoke shares. Share passwords can be supplied through `HOSTLET_SHARE_PASSWORD` or `--password-stdin`, and `--expires` accepts a future ISO-8601 time. A newly created share link is shown only once. After a network error or 5xx response, list existing shares before retrying because a created link cannot be recovered. Only HTTPS is accepted for remote instances; HTTP is limited to loopback testing.
 

@@ -30,21 +30,35 @@ npm start
 
 默认单文件上传上限为 50 MiB；标准 ZIP 最多包含 4,000 个条目和 2,000 个文件，解压内容最多 100 MiB，暂不支持 ZIP64。应用默认私有，访问者下载的内容无法被平台收回；不要在前端文件中放入私密密钥。
 
-## 命令行发布（开发中）
+## 命令行发布
 
-登录账户后，在“API 凭据”创建 30 天的读取、发布和分享凭据，复制一次性显示的值。此前只含读取和发布权限的旧凭据不能管理分享，需要重新创建。将管理站点 origin 设置为 `HOSTLET_URL`，并通过安全的环境变量设置 `HOSTLET_TOKEN`；不要把凭据提交到仓库或写入日志。使用本仓库源码运行：
+CLI 是 [`cli/`](cli) 下的独立 npm 包，要求 Node.js 22.13 或更高版本。当前尚未发布到公共 npm registry，包名和 registry 可用性仍需确认；可从本仓库源码或本地 tarball 安装：
 
 ```sh
-node cli/hostlet.js workspaces
-node cli/hostlet.js pages --workspace WORKSPACE_ID
-node cli/hostlet.js versions --workspace WORKSPACE_ID --page PAGE_ID
-node cli/hostlet.js publish ./dist --workspace WORKSPACE_ID --title "Demo" --json
-node cli/hostlet.js publish-status --workspace WORKSPACE_ID --request-id REQUEST_ID --json
-node cli/hostlet.js rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
-node cli/hostlet.js shares --workspace WORKSPACE_ID --page PAGE_ID
-node cli/hostlet.js share --workspace WORKSPACE_ID --page PAGE_ID --expires 2027-01-01T00:00:00Z --password-stdin
-node cli/hostlet.js revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
+npm install -g ./cli
+hostlet --help
+
+npm pack ./cli
+npm install -g ./hostlet-cli-0.1.0.tgz
 ```
+
+仍支持从源码运行 `node cli/hostlet.js ...`，也可用 `npm run pack:cli` 生成 tarball。
+
+登录账户后，在“API 凭据”创建 30 天的读取、发布和分享凭据，复制一次性显示的值。此前只含读取和发布权限的旧凭据不能管理分享，需要重新创建。将管理站点 origin 设置为 `HOSTLET_URL`，并通过安全的环境变量设置 `HOSTLET_TOKEN`；不要把凭据提交到仓库或写入日志。
+
+```sh
+hostlet workspaces
+hostlet pages --workspace WORKSPACE_ID
+hostlet versions --workspace WORKSPACE_ID --page PAGE_ID
+hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo" --json
+hostlet publish-status --workspace WORKSPACE_ID --request-id REQUEST_ID --json
+hostlet rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
+hostlet shares --workspace WORKSPACE_ID --page PAGE_ID
+hostlet share --workspace WORKSPACE_ID --page PAGE_ID --expires 2027-01-01T00:00:00Z --password-stdin
+hostlet revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
+```
+
+`hostlet --help` 列出全部命令；`hostlet help publish` 或 `hostlet publish --help` 显示命令选项；`hostlet --version` 输出包版本。帮助和版本命令不需要凭据。安装、凭据权限、JSON 输出和错误恢复的完整说明见 [`cli/README.md`](cli/README.md)。
 
 支持 HTML、ZIP 和目录，默认创建私有应用；使用 `--entry` 指定 ZIP 入口。更新已有应用时添加 `--page PAGE_ID --revision REVISION`，修订号可从应用接口读取。结果包含应用和版本标识及管理页地址，私有应用仍需在管理页面授权或创建分享。命令不自动公开应用。目录不能包含隐藏文件、`node_modules` 或符号链接；建议发布经过检查的构建输出。仅 HTTPS 可用于远程服务，HTTP 仅允许本机回环测试。令牌可从账户页面撤销，密码变更也会撤销令牌。
 
@@ -54,9 +68,9 @@ node cli/hostlet.js revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share
 
 CLI 在发送前将请求 ID 写入标准错误（使用 `--json` 时也如此），并为上传文件发送 SHA-256 和字节数。可使用 `--request-id REQUEST_ID` 复用请求 ID；ID 须为 22–128 位字母、数字、`_` 或 `-`。目录归档使用固定顺序和元数据，以便相同内容生成相同字节。请保存请求 ID，并确保重试的文件、文件名、标题、入口、目标应用和修订号不变；更改内容或选项时应使用新的请求 ID。
 
-网络中断或响应无法确认时，不代表发布成功或失败。先用上面的 `publish-status` 查询：`succeeded` 是已提交结果，`in_progress` 应稍后再查，`interrupted` 可用相同 ID 和内容重试，`not_found` 也不能证明请求不会到达，仍应使用相同 ID 重试。示例：`node cli/hostlet.js publish ./dist --workspace WORKSPACE_ID --title "Demo" --request-id REQUEST_ID --json`。请求 ID 不是凭据；查询仍需要有效令牌和当前空间权限。
+网络中断或响应无法确认时，不代表发布成功或失败。先用上面的 `publish-status` 查询：`succeeded` 是已提交结果，`in_progress` 应稍后再查，`interrupted` 可用相同 ID 和内容重试，`not_found` 也不能证明请求不会到达，仍应使用相同 ID 重试。示例：`hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo" --request-id REQUEST_ID --json`。请求 ID 不是凭据；查询仍需要有效令牌和当前空间权限。
 
-发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。此功能尚未提供 npm 发布包、MCP 或 Skill；接口的限流为单进程限制，公开部署仍需入口限流。
+发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。CLI 已提供独立 npm 包清单，可从源码或本地 tarball 安装，但尚未发布到公共 npm registry，也尚未在 Linux 和 macOS 实机验证；MCP 和 Skill 仍未提供。接口的限流为单进程限制，公开部署仍需入口限流。
 
 Agent 使用时应先确认目标实例、工作空间和待发布目录；检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回工作台地址、应用 ID 和版本；如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
 

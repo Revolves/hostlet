@@ -13,12 +13,15 @@
 - 发布幂等回执、发布结果查询和 CLI 不确定结果恢复。
 - 团队公开应用的轻量发布审核流程。
 - CLI 版本回滚、分享列出/创建/撤销，以及 `share` API 凭据权限。
+- CLI 独立 npm 包清单（`cli/package.json`）、包内 README/LICENSE 和 `npm run pack:cli`，可从本地 tarball 安装。
+- `hostlet --help`、`hostlet help <command>`、`hostlet <command> --help` 和 `hostlet --version`；帮助与版本无需凭据即可运行。
 
 ### Changed
 
 - 统一官网、登录页、举报页、账户门户和管理导航的返回路径与视觉入口。
 - 启动日志改为 `Hostlet workspace:`，明确管理入口已统一到 `/workspace`。
 - 新建 API 凭据默认包含读取、发布和分享权限，并在界面显示凭据权限范围。
+- 中英文 README 区分源码运行与本地 npm 安装，并补充命令帮助、凭据作用域、JSON 输出和错误恢复说明。
 
 ### Fixed
 
@@ -27,6 +30,7 @@
 
 ### Verification
 
-- `npm test`：346 项，344 通过、0 失败、2 跳过（Windows 符号链接和 POSIX 权限条件）。
+- `npm test`：354 项，352 通过、0 失败、2 跳过（Windows 符号链接和 POSIX 权限条件）。
 - `npm run build`：通过，45 个前端模块。
-- 尚未完成真实浏览器路由 E2E、目标域名、HTTPS、真实邮件和移动设备验收。
+- 新增 8 项 CLI 帮助、版本、未知命令、凭据脱敏和打包清单测试。本地 tarball 在 Windows 干净目录安装成功，`--help`、`--version` 和 `help share` 均通过。
+- 尚未发布到公共 npm registry，也未完成 Linux/macOS 安装验证、真实浏览器路由 E2E、目标域名、HTTPS、真实邮件和移动设备验收。

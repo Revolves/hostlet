@@ -1,0 +1,37 @@
+{
+  "name": "hostlet-cli",
+  "version": "0.1.0",
+  "description": "Command-line client for publishing and managing static applications on Hostlet.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "hostlet": "hostlet.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "files": [
+    "hostlet.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "hostlet",
+    "static-hosting",
+    "cli",
+    "publish",
+    "deployment"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitee.com/jiangh277/hostlet.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://gitee.com/jiangh277/hostlet/issues"
+  },
+  "homepage": "https://gitee.com/jiangh277/hostlet/tree/master/cli#readme",
+  "dependencies": {
+    "jszip": "^3.10.2"
+  }
+}

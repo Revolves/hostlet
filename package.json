@@ -11,6 +11,7 @@
     "dev:api": "node --watch --env-file-if-exists=.env server/index.js",
     "dev:web": "vite --config admin/vite.config.js",
     "build": "vite build --config admin/vite.config.js",
+    "pack:cli": "npm pack ./cli",
     "start": "node --env-file-if-exists=.env server/index.js",
     "test": "node --no-warnings=ExperimentalWarning --test --test-concurrency=1 \"test/*.test.js\"",
     "check": "npm run test && npm run build"

@@ -2,30 +2,182 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash, randomBytes} from 'node:crypto';
+import {createRequire} from 'node:module';
 import JSZip from 'jszip';
 
-const usage=[
-  'Usage: hostlet workspaces [--json]',
-  '       hostlet pages --workspace <id> [--json]',
-  '       hostlet versions --workspace <id> --page <id> [--json]',
-  '       hostlet publish <html|zip|directory> --workspace <id> --title <title> [--entry <path>] [--page <id> --revision <n>] [--request-id <id>] [--json]',
-  '       hostlet publish-status --workspace <id> --request-id <id> [--json]',
-  '       hostlet rollback --workspace <id> --page <id> --release <id> --revision <n> [--json]',
-  '       hostlet shares --workspace <id> --page <id> [--json]',
-  '       hostlet share --workspace <id> --page <id> [--expires <iso>] [--password-stdin] [--json]',
-  '       hostlet revoke-share --workspace <id> --page <id> --share <id> [--json]'
-].join('\n');
+const {version}=createRequire(import.meta.url)('./package.json');
+const commands=new Map([
+  ['workspaces',{
+    summary:'List workspaces available to the credential.',
+    usage:'hostlet workspaces [--json]',
+    options:[['--json','Print machine-readable JSON.']],
+    notes:['Requires the read scope. Plain output is tab-separated: id, name, role.']
+  }],
+  ['pages',{
+    summary:'List applications in a workspace.',
+    usage:'hostlet pages --workspace <id> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the read scope.']
+  }],
+  ['versions',{
+    summary:'List retained releases of an application.',
+    usage:'hostlet versions --workspace <id> --page <id> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the read scope. The active release is marked "current".']
+  }],
+  ['publish',{
+    summary:'Publish a new application or replace an existing release.',
+    usage:'hostlet publish <html|zip|directory> --workspace <id> --title <title> [options]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--title <title>','Title for a new application. Required unless --page is supplied.'],
+      ['--entry <path>','HTML entry file inside a ZIP or directory archive.'],
+      ['--page <id>','Existing application to replace.'],
+      ['--revision <n>','Current revision of --page; required together with --page.'],
+      ['--request-id <id>','Idempotency key: 22-128 letters, digits, "_" or "-".'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:[
+      'Requires the publish scope. New applications are private; this command never publishes an application publicly.',
+      'The request ID is written to stderr before upload. After a network error or an unconfirmed response, run publish-status before retrying with the same request ID and unchanged content.',
+      'Directories must not contain hidden files, node_modules or symbolic links.'
+    ]
+  }],
+  ['publish-status',{
+    summary:'Check an earlier publication request.',
+    usage:'hostlet publish-status --workspace <id> --request-id <id> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--request-id <id>','Request ID printed by publish.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the read or publish scope. Statuses: not_found, in_progress, interrupted, succeeded. A succeeded result is historical; check the application for its current state.']
+  }],
+  ['rollback',{
+    summary:'Activate a retained release as the current version.',
+    usage:'hostlet rollback --workspace <id> --page <id> --release <id> --revision <n> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--release <id>','Release ID to activate.'],
+      ['--revision <n>','Current application revision.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the publish scope. On CONFLICT, re-read the application and retry with its latest revision.']
+  }],
+  ['shares',{
+    summary:'List share links for an application.',
+    usage:'hostlet shares --workspace <id> --page <id> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the share scope. Only share metadata is listed; share tokens are never printed.']
+  }],
+  ['share',{
+    summary:'Create a share link for a private application.',
+    usage:'hostlet share --workspace <id> --page <id> [--expires <iso>] [--password-stdin] [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--expires <iso>','Future ISO-8601 expiry time, for example 2027-01-01T00:00:00Z.'],
+      ['--password-stdin','Read the share password from standard input.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:[
+      'Requires the share scope. The link is shown once and cannot be recovered.',
+      'The password can also be supplied through HOSTLET_SHARE_PASSWORD. Do not use both methods.',
+      'After a network error or 5xx response, run shares before retrying.'
+    ]
+  }],
+  ['revoke-share',{
+    summary:'Revoke a share link immediately.',
+    usage:'hostlet revoke-share --workspace <id> --page <id> --share <id> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--share <id>','Share ID.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the share scope. Revocation takes effect immediately.']
+  }]
+]);
+const usage=['Usage:',...[...commands.values()].map(command=>`  ${command.usage}`)].join('\n');
+const helpHint='Run "hostlet help <command>" for details.';
+const usageError=()=>new Error(`${usage}\n${helpHint}`);
+function wrapText(text,width=96) {
+  const lines=[];let line='';
+  for (const word of text.split(/\s+/)) {
+    if (!line) line=word;
+    else if (line.length+word.length+1<=width) line+=` ${word}`;
+    else {lines.push(line);line=word;}
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function commandHelp(name) {
+  const command=commands.get(name);
+  const lines=[command.summary,'','Usage:',`  ${command.usage}`,'','Options:'];
+  const width=Math.max(...command.options.map(([flag])=>flag.length));
+  for (const [flag,description] of command.options) lines.push(`  ${flag.padEnd(width)}  ${description}`);
+  if (command.notes.length) {
+    lines.push('','Notes:');
+    for (const note of command.notes) {
+      wrapText(note).forEach((line,index)=>lines.push(`${index ? '    ' : '  - '}${line}`));
+    }
+  }
+  return lines.join('\n');
+}
+function generalHelp() {
+  const width=Math.max(...[...commands.keys()].map(name=>name.length));
+  const lines=[
+    `Hostlet CLI ${version}`,
+    '',
+    'Publish and manage static applications hosted on a Hostlet instance.',
+    '',
+    'Usage:',
+    '  hostlet <command> [options]',
+    '  hostlet help <command>',
+    '  hostlet --version',
+    '',
+    'Commands:'
+  ];
+  for (const [name,command] of commands) lines.push(`  ${name.padEnd(width)}  ${command.summary}`);
+  lines.push(
+    '',
+    'Environment:',
+    '  HOSTLET_URL             Management origin, for example https://hostlet.example.com',
+    '  HOSTLET_TOKEN           43-character API credential. Never pass it on the command line.',
+    '  HOSTLET_SHARE_PASSWORD  Optional share password; prefer --password-stdin.',
+    '',
+    'Global options:',
+    '  -h, --help     Show help. Use "hostlet help <command>" for command details.',
+    '  -v, --version  Print the CLI version.',
+    '',
+    'Remote instances must use HTTPS. HTTP is accepted only for localhost, 127.0.0.1 and [::1].'
+  );
+  return lines.join('\n');
+}
 const validRequestId=id=>typeof id==='string' && id.length>=22 && id.length<=128 && !/[^A-Za-z0-9_-]/.test(id);
 const validRevision=value=>typeof value==='string' && /^(0|[1-9]\d*)$/.test(value) && Number.isSafeInteger(Number(value));
 const redact=value=>process.env.HOSTLET_TOKEN ? String(value).replaceAll(process.env.HOSTLET_TOKEN,'[redacted]') : String(value);
 const output=value=>process.stdout.write(redact(value));
+const outputError=value=>process.stderr.write(redact(value));
 function options(args,allowed) {
   const result={};
   for (let i=0;i<args.length;i++) {
     const key=args[i];
-    if (!allowed.includes(key) || Object.hasOwn(result,key)) throw new Error(usage);
+    if (!allowed.includes(key) || Object.hasOwn(result,key)) throw usageError();
     if (key==='--json' || key==='--password-stdin') result[key]=true;
-    else { if (!args[i+1] || args[i+1].startsWith('--')) throw new Error(usage); result[key]=args[++i]; }
+    else { if (!args[i+1] || args[i+1].startsWith('--')) throw usageError(); result[key]=args[++i]; }
   }
   return result;
 }
@@ -124,8 +276,32 @@ async function publicationStatus(base,token,workspace,requestId) {
 }
 async function main() {
   const [command,...rest]=process.argv.slice(2);
+  if (!command) {
+    outputError(`${generalHelp()}\n\nNo command supplied. Run "hostlet --help" for the command list.\n`);
+    process.exitCode=1;
+    return;
+  }
+  if (command==='--help' || command==='-h') {output(`${generalHelp()}\n`);return;}
+  if (command==='--version' || command==='-v' || command==='-V') {output(`hostlet-cli ${version}\n`);return;}
+  if (command==='help') {
+    if (rest.length===0 || rest.length===1 && (rest[0]==='--help' || rest[0]==='-h')) {output(`${generalHelp()}\n`);return;}
+    if (rest.length!==1) {outputError('hostlet: help accepts a single command name.\n');process.exitCode=1;return;}
+    if (!commands.has(rest[0])) {
+      outputError(`hostlet: unknown command "${rest[0]}".\nRun "hostlet --help" for the command list.\n`);
+      process.exitCode=1;
+      return;
+    }
+    output(`${commandHelp(rest[0])}\n`);
+    return;
+  }
+  if (!commands.has(command)) {
+    outputError(`hostlet: unknown command "${command}".\nRun "hostlet --help" for the command list.\n`);
+    process.exitCode=1;
+    return;
+  }
+  if (rest.includes('--help') || rest.includes('-h')) {output(`${commandHelp(command)}\n`);return;}
   const token=process.env.HOSTLET_TOKEN, raw=process.env.HOSTLET_URL;
-  if (!/^[A-Za-z0-9_-]{43}$/.test(token || '') || !raw) throw new Error(`${usage}\nSet HOSTLET_URL and HOSTLET_TOKEN.`);
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token || '') || !raw) throw new Error(`${usage}\nSet HOSTLET_URL and HOSTLET_TOKEN. ${helpHint}`);
   const base=new URL(raw);
   if (base.username || base.password || base.pathname!=='/' || base.search || base.hash || !(base.protocol==='https:' || base.protocol==='http:' && ['localhost','127.0.0.1','[::1]'].includes(base.hostname))) throw new Error('HOSTLET_URL must be an HTTPS origin (HTTP is allowed only for loopback testing).');
   if (command==='workspaces' && (rest.length===0 || rest.length===1 && rest[0]==='--json')) {
@@ -138,7 +314,7 @@ async function main() {
   }
   if (command==='pages' || command==='versions') {
     const opts=options(rest,['--workspace','--page','--json']);
-    if (!opts['--workspace'] || (command==='versions' && !opts['--page']) || Object.keys(opts).some(key=>!['--workspace','--page','--json'].includes(key)) || (command==='pages' && opts['--page'])) throw new Error(usage);
+    if (!opts['--workspace'] || (command==='versions' && !opts['--page']) || Object.keys(opts).some(key=>!['--workspace','--page','--json'].includes(key)) || (command==='pages' && opts['--page'])) throw usageError();
     const suffix=command==='versions' ? `/${encodeURIComponent(opts['--page'])}/releases` : '';
     const response=await fetch(new URL(`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages${suffix}`,base),{headers:{Authorization:`Bearer ${token}`},redirect:'error'});
     if (!response.ok) throw new Error(`Listing failed (HTTP ${response.status}).`);
@@ -150,7 +326,7 @@ async function main() {
   }
   if (command==='publish-status') {
     const opts=options(rest,['--workspace','--request-id','--json']);
-    if (!opts['--workspace'] || !validRequestId(opts['--request-id']) || Object.keys(opts).some(key=>!['--workspace','--request-id','--json'].includes(key))) throw new Error(usage);
+    if (!opts['--workspace'] || !validRequestId(opts['--request-id']) || Object.keys(opts).some(key=>!['--workspace','--request-id','--json'].includes(key))) throw usageError();
     const result=await publicationStatus(base,token,opts['--workspace'],opts['--request-id']);
     const current=['unchanged','updated','deleted'].includes(result.current) ? result.current : 'unknown';
     const details=result.status==='succeeded' ? `\nHistorical publication result: ${JSON.stringify(result.result ?? null)}\nCurrent page state: ${current}. Check the page or management view for its current state.` : result.result ? `\n${JSON.stringify(result.result)}` : '';
@@ -159,7 +335,7 @@ async function main() {
   }
   if (command==='rollback') {
     const opts=options(rest,['--workspace','--page','--release','--revision','--json']);
-    if (!opts['--workspace'] || !opts['--page'] || !opts['--release'] || !validRevision(opts['--revision'])) throw new Error(usage);
+    if (!opts['--workspace'] || !opts['--page'] || !opts['--release'] || !validRevision(opts['--revision'])) throw usageError();
     const result=await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/releases/${encodeURIComponent(opts['--release'])}/activate`,{
       method:'POST',body:{revision:Number(opts['--revision'])},action:'Rollback'
     });
@@ -169,7 +345,7 @@ async function main() {
   }
   if (command==='shares') {
     const opts=options(rest,['--workspace','--page','--json']);
-    if (!opts['--workspace'] || !opts['--page']) throw new Error(usage);
+    if (!opts['--workspace'] || !opts['--page']) throw usageError();
     const result=await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/shares`,{action:'Share listing'});
     if (!Array.isArray(result?.shares)) throw new Error('Share listing returned an invalid response.');
     const lines=result.shares.map(share=>`${share.id}\t${shareStatus(share)}\t${share.passwordProtected ? 'password' : 'no-password'}\texpires=${formatTime(share.expiresAt)}\tcreated=${formatTime(share.createdAt)}`);
@@ -178,7 +354,7 @@ async function main() {
   }
   if (command==='share') {
     const opts=options(rest,['--workspace','--page','--expires','--password-stdin','--json']);
-    if (!opts['--workspace'] || !opts['--page']) throw new Error(usage);
+    if (!opts['--workspace'] || !opts['--page']) throw usageError();
     if (opts['--password-stdin'] && process.env.HOSTLET_SHARE_PASSWORD !== undefined) throw new Error('Use either --password-stdin or HOSTLET_SHARE_PASSWORD, not both.');
     const password=opts['--password-stdin'] ? await readStdinPassword() : process.env.HOSTLET_SHARE_PASSWORD;
     if (password !== undefined && (!password || Buffer.byteLength(password)>1024)) throw new Error('Share password must contain 1-1024 bytes.');
@@ -201,15 +377,15 @@ async function main() {
   }
   if (command==='revoke-share') {
     const opts=options(rest,['--workspace','--page','--share','--json']);
-    if (!opts['--workspace'] || !opts['--page'] || !opts['--share']) throw new Error(usage);
+    if (!opts['--workspace'] || !opts['--page'] || !opts['--share']) throw usageError();
     await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/shares/${encodeURIComponent(opts['--share'])}`,{method:'DELETE',action:'Share revocation'});
     output(opts['--json'] ? `${JSON.stringify({revoked:true,shareId:opts['--share']})}\n` : `Revoked share ${opts['--share']}.\n`);
     return;
   }
   const [input,...args]=rest;
-  if (command!=='publish' || !input) throw new Error(usage);
+  if (command!=='publish' || !input) throw usageError();
   const opts=options(args,['--workspace','--title','--entry','--page','--revision','--request-id','--json']);
-  if (!opts['--workspace'] || (!opts['--page'] && !opts['--title'])) throw new Error(usage);
+  if (!opts['--workspace'] || (!opts['--page'] && !opts['--title'])) throw usageError();
   if (opts['--request-id'] && !validRequestId(opts['--request-id'])) throw new Error('Request ID must contain 22-128 base64url characters.');
   if (Boolean(opts['--page']) !== Boolean(opts['--revision']) || opts['--revision'] && !validRevision(opts['--revision'])) throw new Error('Replacement requires --page and --revision.');
   const stat=await fs.lstat(input);
@@ -225,7 +401,7 @@ async function main() {
   const url=new URL(`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages${pagePath}`,base);
   const requestId=opts['--request-id'] || randomBytes(24).toString('base64url');
   const recovery=`Check publish-status --workspace ${opts['--workspace']} --request-id ${requestId}; retry the same publication with --request-id ${requestId} and unchanged content and options.`;
-  process.stderr.write(redact(`Publication request ID: ${requestId}\n`));
+  outputError(`Publication request ID: ${requestId}\n`);
   let preflight;
   try {preflight=await publicationStatus(base,token,opts['--workspace'],requestId);}
   catch (error) {throw new Error(`Publish preflight failed; no upload was sent. ${error.message} Verify server support and authorization, then retry with the same request ID: ${requestId}.`);}
@@ -238,7 +414,7 @@ async function main() {
   const result={page:body.page,managementUrl:new URL('/account',base).href};
   const replayed=preflight.status==='succeeded' || response.headers.get('Idempotency-Replayed')==='true';
   const message=replayed ? `Original publication request confirmed. For the current page state, check the page or open the management view at ${result.managementUrl}.` : `Published private application ${body.page.id} (version ${body.page.releaseId}). Manage it at ${result.managementUrl}`;
-  if (opts['--json'] && replayed) process.stderr.write(redact(`${message}\n`));
+  if (opts['--json'] && replayed) outputError(`${message}\n`);
   output(opts['--json'] ? `${JSON.stringify(result)}\n` : `${message}\n`);
 }
-main().catch(error=>{process.stderr.write(redact(`${error.message}\n`));process.exitCode=1;});
+main().catch(error=>{outputError(`${error.message}\n`);process.exitCode=1;});
