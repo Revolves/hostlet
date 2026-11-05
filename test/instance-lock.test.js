@@ -23,7 +23,7 @@ test('server can restrict both listeners to the selected loopback address',async
  const env={...process.env,ADMIN_PASSWORD:'test-admin-password',APP_SECRET:'0123456789abcdef0123456789abcdef',DATA_DIR:root,ADMIN_PORT:String(adminPort),PAGES_PORT:String(pagesPort),BIND_ADDRESS:'127.0.0.1',MULTIUSER_ENABLED:'false'};
  const child=spawn(process.execPath,[fileURLToPath(new URL('../server/index.js',import.meta.url))],{env,stdio:['ignore','pipe','pipe']});
  t.after(async()=>{if(child.exitCode===null){const done=new Promise(resolve=>child.once('exit',resolve));child.kill();await done;}fs.rmSync(root,{recursive:true,force:true});});
- await new Promise((resolve,reject)=>{let output='';child.stdout.on('data',chunk=>{output+=chunk;if(output.includes('Hostlet admin:'))resolve();});child.once('error',reject);child.once('exit',code=>reject(Error(`server exited ${code}`)));});
+ await new Promise((resolve,reject)=>{let output='',errors='';const timer=setTimeout(()=>reject(Error(`server startup timed out: ${errors}`)),15000);child.stdout.on('data',chunk=>{output+=chunk;if(output.includes('Hostlet workspace:')){clearTimeout(timer);resolve();}});child.stderr.on('data',chunk=>{errors+=chunk;});child.once('error',error=>{clearTimeout(timer);reject(error);});child.once('exit',code=>{clearTimeout(timer);reject(Error(`server exited ${code}: ${errors}`));});});
  const connect=(port,host)=>new Promise(resolve=>{const socket=net.connect({port,host});socket.setTimeout(2000);socket.once('connect',()=>{socket.destroy();resolve(true);});socket.once('error',()=>resolve(false));socket.once('timeout',()=>{socket.destroy();resolve(false);});});
  for(const port of [adminPort,pagesPort]){assert.equal(await connect(port,'127.0.0.1'),true);assert.equal(await connect(port,'127.0.0.2'),false);}
 });
@@ -58,7 +58,7 @@ test('the server rejects a second process before opening the same database',asyn
  const start=()=>spawn(process.execPath,[entry],{env,stdio:['ignore','pipe','pipe']});
  const first=start();
  t.after(async()=>{if(first.exitCode===null){const done=new Promise(resolve=>first.once('exit',resolve));first.kill();await done;}fs.rmSync(root,{recursive:true,force:true});});
- await new Promise((resolve,reject)=>{let output='';first.stdout.on('data',chunk=>{output+=chunk;if(output.includes('Hostlet admin:'))resolve();});first.once('error',reject);first.once('exit',code=>reject(Error(`first process exited ${code}`)));});
+ await new Promise((resolve,reject)=>{let output='',errors='';const timer=setTimeout(()=>reject(Error(`first process startup timed out: ${errors}`)),15000);first.stdout.on('data',chunk=>{output+=chunk;if(output.includes('Hostlet workspace:')){clearTimeout(timer);resolve();}});first.stderr.on('data',chunk=>{errors+=chunk;});first.once('error',error=>{clearTimeout(timer);reject(error);});first.once('exit',code=>{clearTimeout(timer);reject(Error(`first process exited ${code}: ${errors}`));});});
  const second=start();let errors='';second.stderr.on('data',chunk=>{errors+=chunk;});
  const code=await new Promise(resolve=>second.once('exit',resolve));
  assert.notEqual(code,0);assert.match(errors,/Data directory is already in use/);
@@ -85,7 +85,7 @@ test('a graceful shutdown drains the server and releases the data directory',asy
  const script=`process.stdin.once('data',()=>{process.stdin.pause();process.emit('SIGTERM');}); await import(${JSON.stringify(entry)});`;
  const child=spawn(process.execPath,['--input-type=module','-e',script],{env,stdio:['pipe','pipe','pipe']});
  t.after(async()=>{if(child.exitCode===null){const done=new Promise(resolve=>child.once('exit',resolve));child.kill();await done;}fs.rmSync(root,{recursive:true,force:true});});
- await new Promise((resolve,reject)=>{child.stdout.on('data',chunk=>{if(String(chunk).includes('Hostlet admin:'))resolve();});child.once('error',reject);child.once('exit',code=>reject(Error(`unexpected exit ${code}`)));});
+ await new Promise((resolve,reject)=>{let errors='';const timer=setTimeout(()=>reject(Error(`server startup timed out: ${errors}`)),15000);child.stdout.on('data',chunk=>{if(String(chunk).includes('Hostlet workspace:')){clearTimeout(timer);resolve();}});child.stderr.on('data',chunk=>{errors+=chunk;});child.once('error',error=>{clearTimeout(timer);reject(error);});child.once('exit',code=>{clearTimeout(timer);reject(Error(`unexpected exit ${code}: ${errors}`));});});
  const exited=new Promise(resolve=>child.once('exit',resolve));child.stdin.end('stop');assert.equal(await exited,0);
  const lock=acquireInstanceLock(root);lock.release();
 });
@@ -102,7 +102,7 @@ test('multiuser server starts expired-record cleanup and shuts it down cleanly',
  const script=`process.stdin.once('data',()=>{process.stdin.pause();process.emit('SIGTERM');}); await import(${JSON.stringify(entry)});`;
  const child=spawn(process.execPath,['--input-type=module','-e',script],{env,stdio:['pipe','pipe','pipe']});
  t.after(async()=>{if(child.exitCode===null){const done=new Promise(resolve=>child.once('exit',resolve));child.kill();await done;}fs.rmSync(root,{recursive:true,force:true});});
- await new Promise((resolve,reject)=>{child.stdout.on('data',chunk=>{if(String(chunk).includes('Hostlet admin:'))resolve();});child.once('error',reject);child.once('exit',code=>reject(Error(`unexpected exit ${code}`)));});
+ await new Promise((resolve,reject)=>{let errors='';const timer=setTimeout(()=>reject(Error(`server startup timed out: ${errors}`)),15000);child.stdout.on('data',chunk=>{if(String(chunk).includes('Hostlet workspace:')){clearTimeout(timer);resolve();}});child.stderr.on('data',chunk=>{errors+=chunk;});child.once('error',error=>{clearTimeout(timer);reject(error);});child.once('exit',code=>{clearTimeout(timer);reject(Error(`unexpected exit ${code}: ${errors}`));});});
  const exited=new Promise(resolve=>child.once('exit',resolve));child.stdin.end('stop');assert.equal(await exited,0);
  const restored=openDatabase(path.join(root,'hostlet.sqlite'));try{assert.equal(restored.prepare('SELECT count(*) n FROM account_sessions').get().n,0);}finally{restored.close();}
  const lock=acquireInstanceLock(root);lock.release();

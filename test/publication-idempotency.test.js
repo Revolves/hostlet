@@ -6,6 +6,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { openDatabase } from '../server/database.js';
+import { latestDatabaseVersion } from '../server/migrations.js';
 import { createPublicationIdempotency } from '../server/publication-idempotency.js';
 import * as receipts from '../server/publication-idempotency.js';
 
@@ -203,7 +204,7 @@ test('version 24 migration preserves existing data and creates durable receipts 
   migrated.close();
   assert.deepEqual(service().status(base), { status: 'succeeded', result });
   assert.equal(db.prepare('SELECT release_dir FROM pages WHERE id=\'p\'').get().release_dir, '/retained');
-  assert.equal(db.prepare('PRAGMA user_version').get().user_version, 26);
+  assert.equal(db.prepare('PRAGMA user_version').get().user_version, latestDatabaseVersion);
   const raw = new DatabaseSync(file);
   assert.equal(raw.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
   raw.close();

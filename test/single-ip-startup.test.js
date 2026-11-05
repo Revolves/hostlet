@@ -16,6 +16,6 @@ test('explicit trusted single-IP configuration starts the normal application ent
     COOKIE_SECURE:'true',REGISTRATION_ENABLED:'false',ADMIN_ORIGINS:'',APPS_DOMAIN:'',ADMIN_ORIGIN:`https://127.0.0.1:${adminPort}`,SINGLE_IP_CONTENT_ORIGIN:`https://127.0.0.1:${pagesPort}`},stdio:['ignore','pipe','pipe']});
   t.after(async()=>{if(child.exitCode===null){child.kill();await new Promise(resolve=>child.once('exit',resolve));}await fs.rm(dir,{recursive:true,force:true});});
   let out='',err='';child.stdout.on('data',data=>out+=data);child.stderr.on('data',data=>err+=data);
-  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Timed out waiting for single-IP startup')),15000);child.on('exit',code=>{clearTimeout(timer);reject(new Error(`Unexpected exit ${code}: ${err}`));});child.stdout.on('data',()=>{if(out.includes('Hostlet admin:') && out.includes('Hosted pages:')){clearTimeout(timer);resolve();}});});
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(`Timed out waiting for single-IP startup: ${err}`)),15000);child.on('exit',code=>{clearTimeout(timer);reject(new Error(`Unexpected exit ${code}: ${err}`));});child.stdout.on('data',()=>{if(out.includes('Hostlet workspace:') && out.includes('Hosted pages:')){clearTimeout(timer);resolve();}});});
   assert.match(out,/Hosted pages:/);
 });

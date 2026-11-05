@@ -69,3 +69,7 @@ For the single-host container example and its verification limits, see [deployme
 Use separate HTTPS hostnames for administration and uploaded content, preferably on separate registrable domains. Route the admin hostname to port 3000 and the content hostname to port 8080. Do not expose the admin API on the content hostname. Set `PUBLIC_BASE_URL`, `ADMIN_ORIGIN`, and `ADMIN_ORIGINS` to the actual addresses, and `COOKIE_SECURE=true` under HTTPS. Preserve the hosted content's CSP and MIME headers. Keep grant URLs out of proxy access logs, and disable shared caching for private content.
 
 By default the app does not trust forwarded client addresses. When using a reverse proxy, configure `TRUSTED_PROXY_IPS` to the proxy's specific IPs or CIDRs and prevent direct access to backend ports. `.env`, `data/`, and generated build output are excluded from version control.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report vulnerabilities privately according to [SECURITY.md](SECURITY.md); do not disclose them in public issues.
