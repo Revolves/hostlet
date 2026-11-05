@@ -32,7 +32,7 @@ npm start
 
 ## 命令行发布（开发中）
 
-登录账户后，在“API 凭据”创建 30 天的读取和发布凭据，复制一次性显示的值。将管理站点 origin 设置为 `HOSTLET_URL`，并通过安全的环境变量设置 `HOSTLET_TOKEN`；不要把凭据提交到仓库或写入日志。使用本仓库源码运行：
+登录账户后，在“API 凭据”创建 30 天的读取、发布和分享凭据，复制一次性显示的值。此前只含读取和发布权限的旧凭据不能管理分享，需要重新创建。将管理站点 origin 设置为 `HOSTLET_URL`，并通过安全的环境变量设置 `HOSTLET_TOKEN`；不要把凭据提交到仓库或写入日志。使用本仓库源码运行：
 
 ```sh
 node cli/hostlet.js workspaces
@@ -40,9 +40,15 @@ node cli/hostlet.js pages --workspace WORKSPACE_ID
 node cli/hostlet.js versions --workspace WORKSPACE_ID --page PAGE_ID
 node cli/hostlet.js publish ./dist --workspace WORKSPACE_ID --title "Demo" --json
 node cli/hostlet.js publish-status --workspace WORKSPACE_ID --request-id REQUEST_ID --json
+node cli/hostlet.js rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
+node cli/hostlet.js shares --workspace WORKSPACE_ID --page PAGE_ID
+node cli/hostlet.js share --workspace WORKSPACE_ID --page PAGE_ID --expires 2027-01-01T00:00:00Z --password-stdin
+node cli/hostlet.js revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
 ```
 
 支持 HTML、ZIP 和目录，默认创建私有应用；使用 `--entry` 指定 ZIP 入口。更新已有应用时添加 `--page PAGE_ID --revision REVISION`，修订号可从应用接口读取。结果包含应用和版本标识及管理页地址，私有应用仍需在管理页面授权或创建分享。命令不自动公开应用。目录不能包含隐藏文件、`node_modules` 或符号链接；建议发布经过检查的构建输出。仅 HTTPS 可用于远程服务，HTTP 仅允许本机回环测试。令牌可从账户页面撤销，密码变更也会撤销令牌。
+
+回滚使用 `rollback`，需要当前修订号；返回 `CONFLICT` 时先重新读取应用，再使用最新修订号重试。分享管理要求凭据包含 `share` 权限：`shares` 只列出元数据，`share` 创建的新链接只在本次输出中显示，`revoke-share` 立即撤销已有访问。创建分享时可用 `--expires` 指定未来的 ISO-8601 时间；密码从 `HOSTLET_SHARE_PASSWORD` 读取，或用 `--password-stdin` 从标准输入读取，避免写入命令历史。网络中断或 5xx 响应后不要直接重复创建分享，先执行 `shares` 检查，因为已创建的链接无法再次获取。
 
 团队编辑者可将私有应用提交给团队所有者审核公开；所有者可批准、驳回或直接公开。审核绑定提交时的版本，内容更改后需要重新提交。公开的团队应用须先设为私有，才能更换或回滚版本。私有分享仍可用于预览，个人空间可直接公开。
 

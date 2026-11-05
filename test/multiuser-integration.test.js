@@ -7,6 +7,7 @@ import path from "node:path";
 import { openDatabase } from "../server/database.js";
 import { loadConfig } from "../server/config.js";
 import { createApps } from "../server/app.js";
+import { createApiCredentials } from "../server/api-credentials.js";
 
 test("account sessions can manage their workspaces but cannot access legacy admin pages", async (t) => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "hostlet-multi-"));
@@ -42,6 +43,22 @@ test("account sessions can manage their workspaces but cannot access legacy admi
   assert.equal(upload.status, 201);
   const { page } = await upload.json();
   assert.equal(page.accessMode, "private");
+  const userId = db.prepare("SELECT id FROM users WHERE email=?").get("person@example.org").id;
+  const credentials = createApiCredentials({db});
+  const readToken = credentials.create(userId,{name:'cli-read',scopes:['read'],expiresAt:Date.now()+86400000}).token;
+  const publishToken = credentials.create(userId,{name:'cli-publish',scopes:['publish'],expiresAt:Date.now()+86400000}).token;
+  const shareToken = credentials.create(userId,{name:'cli-share',scopes:['share'],expiresAt:Date.now()+86400000}).token;
+  const cli = (token, pathname, {method='GET', body} = {}) => fetch(`${base}/api/cli/workspaces/${space.id}${pathname}`,{method,headers:{Authorization:`Bearer ${token}`,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  assert.equal((await cli(readToken,'/pages')).status,200);
+  assert.equal((await cli(readToken,`/pages/${page.id}/shares`,{method:'POST',body:{}})).status,401);
+  assert.equal((await cli(publishToken,`/pages/${page.id}/shares`,{method:'POST',body:{}})).status,401);
+  const cliShare = await cli(shareToken,`/pages/${page.id}/shares`,{method:'POST',body:{}});
+  assert.equal(cliShare.status,201);
+  const cliShareData = (await cliShare.json()).share;
+  const cliShares = await cli(shareToken,`/pages/${page.id}/shares`);
+  assert.equal(cliShares.status,200);
+  assert.ok(!(await cliShares.text()).includes(cliShareData.token));
+  assert.equal((await cli(shareToken,`/pages/${page.id}/shares/${cliShareData.id}`,{method:'DELETE'})).status,204);
   db.prepare('INSERT INTO account_sessions VALUES (?,?,?,?)').run('expired-session',page.createdBy,0,0);
   db.prepare('INSERT INTO workspace_quota_reservations VALUES (?,?,?,?,?)').run('expired-reservation',space.id,0,1,0);
   ephemeralCleanupScheduler.start();await ephemeralCleanupScheduler.waitForIdle();await ephemeralCleanupScheduler.stop();
@@ -79,6 +96,10 @@ test("account sessions can manage their workspaces but cannot access legacy admi
   assert.equal(opened.status, 200);
   assert.match(opened.text, /Hello/);
   assert.equal((await hostedRequest("/")).status, 401);
+  const currentPage = await (await cli(readToken,`/pages/${page.id}`)).json();
+  const cliRollback = await cli(publishToken,`/pages/${page.id}/releases/${updated.releaseId}/activate`,{method:'POST',body:{revision:currentPage.page.revision}});
+  assert.equal(cliRollback.status,200);
+  assert.equal((await cliRollback.json()).page.releaseId,updated.releaseId);
   let releaseMaintenance, enteredMaintenance;
   const entered=new Promise(resolve=>{enteredMaintenance=resolve;});
   const maintenanceRun=maintenance.runExclusive(async()=>{enteredMaintenance();await new Promise(resolve=>{releaseMaintenance=resolve;});});
@@ -107,9 +128,10 @@ test("account sessions can manage their workspaces but cannot access legacy admi
     }); req.on("error", reject); req.end(payload);
   });
   config.allowedOrigins.push("https://admin.hostlet.test");
+  const sharesBeforeAuditFailure=db.prepare('SELECT count(*) n FROM workspace_shares WHERE page_id=?').get(page.id).n;
   db.exec("CREATE TRIGGER deny_share_audit BEFORE INSERT ON workspace_audit WHEN NEW.action='share.created' BEGIN SELECT RAISE(ABORT,'injected audit failure'); END");
   assert.equal((await adminRequest(`/api/shares/${space.id}/pages/${page.id}`, { body: { password: "share-password" }, headers: { cookie } })).status,500);
-  assert.equal(db.prepare('SELECT count(*) n FROM workspace_shares WHERE page_id=?').get(page.id).n,0);
+  assert.equal(db.prepare('SELECT count(*) n FROM workspace_shares WHERE page_id=?').get(page.id).n,sharesBeforeAuditFailure);
   db.exec('DROP TRIGGER deny_share_audit');
   const share = await adminRequest(`/api/shares/${space.id}/pages/${page.id}`, { body: { password: "share-password" }, headers: { cookie } });
   assert.equal(share.status, 201);

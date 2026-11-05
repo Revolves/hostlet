@@ -109,6 +109,10 @@ test('enableCli permits only the existing Bearer-only workspace routes without b
     ['GET', '/api/cli/workspaces/ws-123/pages/page_456/releases'],
     ['POST', '/api/cli/workspaces/ws-123/pages'],
     ['POST', '/api/cli/workspaces/ws-123/pages/page_456/replace'],
+    ['POST', '/api/cli/workspaces/ws-123/pages/page_456/releases/release-1/activate'],
+    ['GET', '/api/cli/workspaces/ws-123/pages/page_456/shares'],
+    ['POST', '/api/cli/workspaces/ws-123/pages/page_456/shares'],
+    ['DELETE', '/api/cli/workspaces/ws-123/pages/page_456/shares/share-1'],
     ['GET', '/api/cli/workspaces/ws-123/pages?limit=5'],
   ]) assert.equal((await send(method, headers, path)).statusCode, 200, `${method} ${path}`);
 
@@ -118,6 +122,11 @@ test('enableCli permits only the existing Bearer-only workspace routes without b
     ['POST', '/api/cli/workspaces/ws/pages/page'], ['DELETE', '/api/cli/workspaces/ws/pages/page'],
     ['PATCH', '/api/cli/workspaces/ws/pages/page/replace'],
     ['GET', '/api/cli/workspaces/ws/pages/page/releases/extra'],
+    ['PATCH', '/api/cli/workspaces/ws/pages/page/shares'],
+    ['GET', '/api/cli/workspaces/ws/pages/page/shares/extra/extra'],
+    ['POST', '/api/cli/workspaces/ws/pages/page/shares/share-1'],
+    ['DELETE', '/api/cli/workspaces/ws/pages/page/shares'],
+    ['POST', '/api/cli/workspaces/ws/pages/page/releases/release-1'],
     ['GET', '/api/cli/workspaces/ws%2fadmin/pages'],
     ['POST', '/api/cli/workspaces/ws/pages/%2e%2e/replace'],
     ['GET', '/api/cli/workspaces/../pages'],

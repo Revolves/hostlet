@@ -4,7 +4,7 @@ import http from 'node:http';
 import express from 'express';
 import { DatabaseSync } from 'node:sqlite';
 import { workspaceShareSchema, createWorkspaceShareService } from '../server/workspace-shares.js';
-import { createWorkspaceShareRouter } from '../server/workspace-share-router.js';
+import { createWorkspaceShareRouter, createWorkspaceCliShareRouter } from '../server/workspace-share-router.js';
 
 async function setup(t, options={}) {
   const db=new DatabaseSync(':memory:'); db.exec("PRAGMA foreign_keys=ON; CREATE TABLE workspaces(id TEXT PRIMARY KEY); CREATE TABLE workspace_pages(id TEXT PRIMARY KEY,workspace_id TEXT,access_mode TEXT); INSERT INTO workspaces VALUES ('w'); INSERT INTO workspace_pages VALUES ('p','w','private');"); db.exec(workspaceShareSchema);
@@ -50,4 +50,28 @@ test('page buckets have a hard cap and malformed requests consume IP quota', asy
   assert.equal((await call('/ticket',{method:'POST',body:{unexpected:true}})).status,400);
   assert.equal((await call('/ticket',{method:'POST',body:{unexpected:true}})).status,400);
   assert.equal((await call('/ticket',{method:'POST',body:{unexpected:true}})).status,429);
+});
+
+async function cliSetup(t) {
+  const db=new DatabaseSync(':memory:'); db.exec("PRAGMA foreign_keys=ON; CREATE TABLE workspaces(id TEXT PRIMARY KEY); CREATE TABLE workspace_pages(id TEXT PRIMARY KEY,workspace_id TEXT,access_mode TEXT); INSERT INTO workspaces VALUES ('w'); INSERT INTO workspace_pages VALUES ('p','w','private');"); db.exec(workspaceShareSchema);
+  const service=createWorkspaceShareService({db,authorize:(_workspace,actor)=>{if(actor!=='owner') throw Object.assign(new Error(),{code:'FORBIDDEN'});},limitAttempt:()=>true});
+  const app=express(); app.use(express.json()); app.use('/api/cli/workspaces',createWorkspaceCliShareRouter({service,requireUser:(req,res,next)=>{const user=req.get('x-user');if(!user) return res.sendStatus(401);req.user={id:user};next();}}));
+  const server=await new Promise((resolve,reject)=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));s.on('error',reject);});
+  t.after(()=>{server.close();db.close();});
+  const call=(url,{method='GET',body,user}={})=>new Promise((resolve,reject)=>{const payload=body===undefined?undefined:JSON.stringify(body);const req=http.request({host:'127.0.0.1',port:server.address().port,path:'/api/cli/workspaces'+url,method,headers:{...(user?{'x-user':user}:{}),...(payload===undefined?{}:{'content-type':'application/json','content-length':Buffer.byteLength(payload)})}},res=>{let data='';res.on('data',chunk=>data+=chunk);res.on('end',()=>resolve({status:res.statusCode,body:data,headers:res.headers}));});req.on('error',reject);req.end(payload);});
+  return {call};
+}
+
+test('CLI share management is bearer-user scoped and returns JSON errors', async t=>{
+  const {call}=await cliSetup(t);
+  assert.equal((await call('/w/pages/p/shares')).status,401);
+  const created=await call('/w/pages/p/shares',{method:'POST',user:'owner',body:{password:'private'}});
+  assert.equal(created.status,201);assert.match(created.headers['cache-control'],/no-store/);
+  const share=JSON.parse(created.body).share;assert.ok(share.token);
+  assert.equal((await call('/w/pages/p/shares',{method:'POST',user:'viewer',body:{}})).status,403);
+  assert.equal((await call('/w/pages/p/shares',{method:'POST',user:'owner',body:{unexpected:true}})).status,400);
+  const listed=await call('/w/pages/p/shares',{user:'owner'});assert.equal(listed.status,200);assert.ok(!listed.body.includes(share.token));
+  assert.equal((await call(`/w/pages/p/shares/${share.id}`,{method:'DELETE',user:'owner'})).status,204);
+  const revoked=await call('/w/pages/p/shares',{user:'owner'});assert.equal(JSON.parse(revoked.body).shares[0].revokedAt!==null,true);
+  assert.equal((await call('/w/pages/p/shares/missing',{method:'DELETE',user:'owner'})).status,404);
 });

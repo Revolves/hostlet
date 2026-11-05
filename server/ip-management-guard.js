@@ -48,7 +48,11 @@ export function createIpManagementGuard({ ipHosting = null, bearerOnlyRoutes = [
     const cliWorkspacePath = enableCli === true && (
       (req.method === 'GET' && /^\/api\/cli\/workspaces(?:\/[A-Za-z0-9_-]+\/pages(?:\/[A-Za-z0-9_-]+(?:\/releases)?)?)?$/.test(req.path)) ||
       (req.method === 'GET' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(req.path)) ||
-      (req.method === 'POST' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages(?:\/[A-Za-z0-9_-]+\/replace)?$/.test(req.path))
+      (req.method === 'GET' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages\/[A-Za-z0-9_-]+\/shares$/.test(req.path)) ||
+      (req.method === 'POST' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages(?:\/[A-Za-z0-9_-]+\/replace)?$/.test(req.path)) ||
+      (req.method === 'POST' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages\/[A-Za-z0-9_-]+\/releases\/[A-Za-z0-9_-]+\/activate$/.test(req.path)) ||
+      (req.method === 'POST' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages\/[A-Za-z0-9_-]+\/shares$/.test(req.path)) ||
+      (req.method === 'DELETE' && /^\/api\/cli\/workspaces\/[A-Za-z0-9_-]+\/pages\/[A-Za-z0-9_-]+\/shares\/[A-Za-z0-9_-]+$/.test(req.path))
     );
     const isCli = origin === undefined && !hasFetchMetadata && count('cookie') === 0 &&
       count('authorization') === 1 && /^Bearer [A-Za-z0-9_-]{43}$/.test(req.headers.authorization || '') &&

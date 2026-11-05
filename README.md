@@ -44,6 +44,22 @@ ZIP archives may contain the entry at their root or within one enclosing folder.
 
 Page settings support editing, replacement releases, version history, rollback, previews, copying links, and deletion. Replacing a release preserves the mount path. Changing its slug breaks the previous URL. Preview links expire after 15 minutes; changing the active release invalidates its previous grants, including if an earlier version is restored. Stored versions count towards the storage statistic. Single-admin legacy pages do not automatically prune history; monitor disk usage. Workspace applications are capped at 20 retained versions and provide explicit old-version deletion.
 
+## CLI (development)
+
+Create a 30-day API credential with read, publish, and share scopes, then set `HOSTLET_URL` and `HOSTLET_TOKEN` in the environment. Do not commit the token or write it to logs. Run the CLI from this source tree:
+
+```sh
+node cli/hostlet.js workspaces
+node cli/hostlet.js pages --workspace WORKSPACE_ID
+node cli/hostlet.js versions --workspace WORKSPACE_ID --page PAGE_ID
+node cli/hostlet.js rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
+node cli/hostlet.js shares --workspace WORKSPACE_ID --page PAGE_ID
+node cli/hostlet.js share --workspace WORKSPACE_ID --page PAGE_ID --expires 2027-01-01T00:00:00Z --password-stdin
+node cli/hostlet.js revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
+```
+
+Publishing accepts HTML, ZIP, or a directory and creates a private application by default. Rollback requires the current revision; a `CONFLICT` response means the application changed and must be refreshed. A credential must include the `share` scope to list, create, or revoke shares. Share passwords can be supplied through `HOSTLET_SHARE_PASSWORD` or `--password-stdin`, and `--expires` accepts a future ISO-8601 time. A newly created share link is shown only once. After a network error or 5xx response, list existing shares before retrying because a created link cannot be recovered. Only HTTPS is accepted for remote instances; HTTP is limited to loopback testing.
+
 ## Multiuser development
 
 The multiuser features are under development and are disabled by default. Set `MULTIUSER_ENABLED=true`, configure the SMTP settings in `.env.example`, and set `REGISTRATION_ENABLED=true` to enable account registration. SMTP requires TLS or STARTTLS. Set `ADMIN_ORIGIN` to the exact externally visible management origin and `COOKIE_SECURE=true` for HTTPS. Account links and team invitations use that origin. User accounts and workspaces are separate from the existing administrator account and its pages; existing pages are not automatically assigned to a user.

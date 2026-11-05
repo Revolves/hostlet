@@ -77,3 +77,37 @@ export function createWorkspaceShareRouter({ service, requireUser, managementOri
   router.use((err,req,res,next)=>{if(res.headersSent) return next(err); const status={INVALID:400,NOT_FOUND:404,FORBIDDEN:403,RATE_LIMITED:429}[err?.code] || (err?.status===413 ? 413 : err?.status===400 ? 400 : 500); return res.sendStatus(status);});
   return router;
 }
+
+/**
+ * Bearer-authenticated share management for the CLI. Mount at
+ * /api/cli/workspaces before the general CLI page router. Unlike the browser
+ * router, this surface has no cookie session or Origin requirement; the API
+ * credential scope provides authorization. Responses and errors are JSON so
+ * callers can distinguish permission, validation and not-found failures.
+ */
+export function createWorkspaceCliShareRouter({ service, requireUser }) {
+  if (!service || ['create','list','revoke'].some(k=>typeof service[k] !== 'function') || typeof requireUser !== 'function') throw new TypeError('Invalid CLI share router configuration');
+  const router=express.Router();
+  router.use((_req,res,next)=>{res.set({'Cache-Control':'private, no-store, max-age=0','X-Content-Type-Options':'nosniff'});next();});
+  const user=(req,res,next)=>requireUser(req,res,()=>{
+    if (typeof req.user?.id === 'string' && req.user.id) return next();
+    return res.status(401).json({code:'UNAUTHORIZED'});
+  });
+  router.get('/:workspaceId/pages/:pageId/shares',user,(req,res)=>res.json({shares:service.list(req.params.workspaceId,req.user.id,req.params.pageId)}));
+  router.post('/:workspaceId/pages/:pageId/shares',user,async(req,res)=>{
+    const body=req.body;
+    if (!body || typeof body!=='object' || Array.isArray(body) || Object.keys(body).some(k=>!['password','expiresAt'].includes(k))) return res.status(400).json({code:'INVALID'});
+    const share=await service.create(req.params.workspaceId,req.user.id,req.params.pageId,body);
+    return res.status(201).json({share});
+  });
+  router.delete('/:workspaceId/pages/:pageId/shares/:shareId',user,(req,res)=>{
+    service.revoke(req.params.workspaceId,req.user.id,req.params.pageId,req.params.shareId);
+    res.sendStatus(204);
+  });
+  router.use((err,_req,res,next)=>{
+    if (res.headersSent) return next(err);
+    const status={INVALID:400,NOT_FOUND:404,FORBIDDEN:403,UNAUTHORIZED:401,RATE_LIMITED:429}[err?.code] || 500;
+    return res.status(status).json({code: status===500 ? 'INTERNAL_ERROR' : err.code});
+  });
+  return router;
+}

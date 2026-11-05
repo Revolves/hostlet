@@ -43,7 +43,7 @@ import { createRetentionScheduler } from "./retention-scheduler.js";
 import { createEphemeralCleanup } from "./ephemeral-cleanup.js";
 import { createLegacyMigration } from "./legacy-migration.js";
 import { createWorkspaceShareService } from "./workspace-shares.js";
-import { createWorkspaceShareRouter } from "./workspace-share-router.js";
+import { createWorkspaceShareRouter, createWorkspaceCliShareRouter } from "./workspace-share-router.js";
 import { createPlatformAdminService } from "./platform-admin.js";
 import { createPlatformAdminRouter } from "./platform-admin-router.js";
 import { createSecurityLog, createSecurityRequestLogger } from "./security-log.js";
@@ -753,7 +753,8 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       const headers=req.rawHeaders.filter((_,i)=>i%2===0 && req.rawHeaders[i].toLowerCase()==='authorization');
       const match=/^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('Authorization') || '');
       const statusRoute=req.method==='GET' && /^\/[^/]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(req.path);
-      const scopes=statusRoute ? ['publish','read'] : [req.method==='GET' ? 'read' : 'publish'];
+      const shareRoute=req.method!=='OPTIONS' && /^\/[^/]+\/pages\/[^/]+\/shares(?:\/[^/]+)?$/.test(req.path);
+      const scopes=statusRoute ? ['publish','read'] : shareRoute ? ['share'] : [req.method==='GET' ? 'read' : 'publish'];
       const authenticate=()=>match && scopes.map(scope=>apiCredentials.authenticate(match[1],scope)).find(Boolean);
       const credential=headers.length===1 && authenticate();
       if (!credential) return res.status(401).json({code:'UNAUTHORIZED'});
@@ -764,11 +765,14 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
     };
     admin.use('/api/cli', (req,res,next)=>{res.set('Cache-Control','no-store');next();});
     admin.get('/api/cli/workspaces',cliUser,(req,res)=>res.json(workspaceService.listWorkspaces(req.user.id)));
+    const shareService = hostingConfig ? createWorkspaceShareService({ db, authorize: workspaceService.authorize, audit: workspaceService.recordPageAudit, limitAttempt: shareAttemptLimiter() }) : null;
+    if (shareService) admin.use('/api/cli/workspaces', createWorkspaceCliShareRouter({service:shareService,requireUser:cliUser}));
     admin.use('/api/cli/workspaces',(req,res,next)=>{
       const p=req.path;
       const readable=req.method==='GET' && (/^\/[^/]+\/pages(?:\/[^/]+(?:\/releases)?)?$/.test(p) || /^\/[^/]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(p));
       const publish=req.method==='POST' && /^\/[^/]+\/pages(?:\/[^/]+\/replace)?$/.test(p);
-      return readable || publish ? next() : res.sendStatus(404);
+      const rollback=req.method==='POST' && /^\/[^/]+\/pages\/[^/]+\/releases\/[^/]+\/activate$/.test(p);
+      return readable || publish || rollback ? next() : res.sendStatus(404);
     },createWorkspacePagesRouter({service:workspacePages,requireUser:cliUser,uploader:workspaceUploader,tempFiles,visibility,receiptFactory:()=>createPublicationIdempotency(db)}));
     if (hostingConfig) {
       platformAdmin = createPlatformAdminService({ db, defaultRegistrationEnabled: config.registrationEnabled });
@@ -800,7 +804,6 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       if (!config.ipHosting) hostingConfig.appDomain = hosting.appDomain;
       const requireInstanceAdmin = (req, res, next) => services.auth.requireAdmin(req, res, () => { req.admin = { id: "instance-admin" }; next(); });
       admin.use("/api/platform", createPlatformAdminRouter({ service: platformAdmin, quotaService, operationsStatus, retentionDiagnostics, requireAdmin: requireInstanceAdmin, managementOrigin: hosting.managementOrigin }));
-      const shareService = createWorkspaceShareService({ db, authorize: workspaceService.authorize, audit: workspaceService.recordPageAudit, limitAttempt: shareAttemptLimiter() });
       const router = config.ipHosting
         ? createWorkspaceIpHostingRouter({service:hosting,shareService,contentHost:new URL(config.ipHosting.contentOrigin).host,isSuspended:platformAdmin.isSuspended,onPublicVisit:(pageId,details)=>recordVisit('workspace',pageId,details)})
         : createWorkspaceHostingAppRouter({ service: hosting, shareService, onPublicVisit:(pageId,details)=>recordVisit('workspace',pageId,details) });
