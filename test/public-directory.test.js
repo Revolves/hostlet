@@ -96,3 +96,73 @@ test("recordVisit accepts entry document requests exactly once", (t) => {
   assert.equal(db.prepare("SELECT count(*) n FROM public_page_visits").get().n, 1);
   assert.equal(db.prepare("SELECT visits FROM public_page_visits WHERE page_key='legacy:page-open'").get().visits, 2);
 });
+
+test("directory paginates, searches and sorts with stable card tones", (t) => {
+  const db = fixtures();
+  t.after(() => db.close());
+  seed(db);
+  const service = createPublicDirectoryService({
+    db,
+    legacyUrl: (slug) => `https://pages.example.test/p/${slug}/`,
+    workspaceUrl: (id) => `https://${id}.apps.example.test/`,
+  });
+  service.recordVisit({ kind: "legacy", pageId: "page-open" });
+  service.recordVisit({ kind: "legacy", pageId: "page-open" });
+  service.recordVisit({ kind: "workspace", pageId: "w-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" });
+
+  const first = service.list({ limit: "2", offset: "0" });
+  assert.deepEqual(first.apps.map((app) => app.id), [
+    "w-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "w-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  ]);
+  assert.deepEqual(first.page, { limit: 2, offset: 0, total: 3, hasMore: true });
+  assert.deepEqual(first.stats, { applications: 3, workspaces: 2, visits: 3 });
+
+  const second = service.list({ limit: "2", offset: "2" });
+  assert.deepEqual(second.apps.map((app) => app.id), ["page-open"]);
+  assert.equal(second.page.hasMore, false);
+
+  const popular = service.list({ limit: "3", sort: "popular" });
+  assert.deepEqual(popular.apps.map((app) => app.id), [
+    "page-open",
+    "w-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "w-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  ]);
+
+  const field = service.list({ q: "field" });
+  assert.deepEqual(field.apps.map((app) => app.id), [
+    "w-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "page-open",
+  ]);
+  assert.equal(field.page.total, 2);
+  assert.deepEqual(field.stats, { applications: 3, workspaces: 2, visits: 3 });
+
+  assert.deepEqual(service.list({ q: "team" }).apps.map((app) => app.id), ["w-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]);
+  assert.deepEqual(service.list({ q: "quiet" }).apps.map((app) => app.id), ["w-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]);
+  assert.equal(service.list({ q: "missing" }).page.total, 0);
+
+  const firstCard = service.list({ limit: "1" }).apps[0];
+  const sameCard = service.list({ limit: "3" }).apps.find((app) => app.id === firstCard.id);
+  assert.equal(sameCard.className, firstCard.className);
+  assert.ok(["editorial", "studio", "archive", "signal"].includes(firstCard.className));
+});
+
+test("directory rejects invalid pagination, sort and search parameters", (t) => {
+  const db = fixtures();
+  t.after(() => db.close());
+  seed(db);
+  const service = createPublicDirectoryService({ db, legacyUrl: () => "", workspaceUrl: () => "" });
+
+  for (const options of [
+    { limit: "0" },
+    { limit: "49" },
+    { limit: "1.5" },
+    { limit: ["1"] },
+    { offset: "-1" },
+    { offset: "1000001" },
+    { sort: "newest" },
+    { q: "x".repeat(121) },
+  ]) {
+    assert.throws(() => service.list(options), (error) => error instanceof TypeError || error instanceof RangeError, JSON.stringify(options));
+  }
+});

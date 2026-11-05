@@ -26,6 +26,10 @@ async function setup(t, extra = {}) {
     PUBLIC_BASE_URL: "http://127.0.0.1:8100",
     ...extra,
   });
+  const adminDist = path.join(directory, "admin-dist");
+  fs.mkdirSync(adminDist, { recursive: true });
+  fs.writeFileSync(path.join(adminDist, "index.html"), `<!doctype html><html lang="zh-CN"><head><!-- HOSTLET_META_START --><title>Hostlet</title><!-- HOSTLET_META_END --></head><body><div id="root"></div></body></html>`);
+  config.adminDistDir = adminDist;
   const db = openDatabase(":memory:");
   const { admin, hosted } = await createApps({ config, db, accountSender: extra.MULTIUSER_ENABLED === "true" ? async () => {} : undefined });
   const adminServer = http.createServer(admin);
@@ -222,6 +226,77 @@ test("public directory is the homepage and lists real applications with visit to
   const after = await (await fetch(`${app.admin}/api/public/apps`)).json();
   assert.equal(after.apps[0].visits, 1);
   assert.equal(after.stats.visits, 1);
+});
+
+test("public directory paginates, sorts and searches while keeping global stats", async (t) => {
+  const app = await setup(t);
+  seedLegacy(app.db, app.config.dataDir, { id: "legacy-atlas", title: "Atlas field notes", slug: "atlas" });
+  seedLegacy(app.db, app.config.dataDir, { id: "legacy-zephyr", title: "Zephyr index", slug: "zephyr" });
+  assert.equal((await fetch(`${app.pages}/p/atlas/`)).status, 200);
+  assert.equal((await fetch(`${app.pages}/p/atlas/`)).status, 200);
+
+  const first = await (await fetch(`${app.admin}/api/public/apps?limit=1&offset=0`)).json();
+  assert.equal(first.apps.length, 1);
+  assert.equal(first.page.limit, 1);
+  assert.equal(first.page.offset, 0);
+  assert.equal(first.page.total, 2);
+  assert.equal(first.page.hasMore, true);
+  assert.equal(first.stats.applications, 2);
+  assert.equal(first.stats.visits, 2);
+
+  const second = await (await fetch(`${app.admin}/api/public/apps?limit=1&offset=1`)).json();
+  assert.equal(second.apps.length, 1);
+  assert.notEqual(second.apps[0].id, first.apps[0].id);
+  assert.equal(second.page.hasMore, false);
+
+  const popular = await (await fetch(`${app.admin}/api/public/apps?limit=2&sort=popular`)).json();
+  assert.equal(popular.apps[0].id, "legacy-atlas");
+  assert.equal(popular.apps[0].visits, 2);
+
+  const search = await (await fetch(`${app.admin}/api/public/apps?q=zeph`)).json();
+  assert.equal(search.apps.length, 1);
+  assert.equal(search.apps[0].id, "legacy-zephyr");
+  assert.equal(search.page.total, 1);
+  assert.equal(search.stats.applications, 2);
+
+  const none = await (await fetch(`${app.admin}/api/public/apps?q=missing`)).json();
+  assert.equal(none.apps.length, 0);
+  assert.equal(none.page.total, 0);
+  assert.equal(none.stats.applications, 2);
+});
+
+test("public directory rejects malformed pagination and sort parameters", async (t) => {
+  const app = await setup(t);
+  for (const search of ["?limit=0", "?limit=49", "?limit=abc", "?offset=-1", "?offset=1000001", "?sort=unknown", `?q=${"x".repeat(121)}`]) {
+    const response = await fetch(`${app.admin}/api/public/apps${search}`);
+    assert.equal(response.status, 400, search);
+    assert.equal((await response.json()).code, "INVALID_QUERY");
+  }
+});
+
+test("public homepage serves language-specific SEO metadata", async (t) => {
+  const app = await setup(t);
+  const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const origin = escape(app.admin);
+
+  const zhResponse = await fetch(`${app.admin}/`);
+  assert.equal(zhResponse.headers.get("content-language"), "zh-CN");
+  assert.match(zhResponse.headers.get("cache-control"), /no-cache/);
+  const zh = await zhResponse.text();
+  assert.match(zh, /<html lang="zh-CN">/);
+  assert.match(zh, /<title>Hostlet · 让每个作品都有独立的地址<\/title>/);
+  assert.match(zh, /<meta property="og:locale" content="zh_CN" \/>/);
+  assert.match(zh, new RegExp(`<link rel="canonical" href="${origin}/" />`));
+  assert.match(zh, new RegExp(`<meta property="og:image" content="${origin}/social-card.png" />`));
+
+  const enResponse = await fetch(`${app.admin}/?lang=en`);
+  assert.equal(enResponse.headers.get("content-language"), "en");
+  const en = await enResponse.text();
+  assert.match(en, /<html lang="en">/);
+  assert.match(en, /<title>Hostlet · Every project deserves its own address<\/title>/);
+  assert.match(en, /<meta property="og:locale" content="en_US" \/>/);
+  assert.match(en, new RegExp(`<link rel="canonical" href="${origin}/\\?lang=en" />`));
+  assert.match(en, /<meta name="twitter:card" content="summary_large_image" \/>/);
 });
 
 test("private and preview legacy requests do not count as public visits", async (t) => {

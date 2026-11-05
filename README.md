@@ -26,7 +26,7 @@ npm run build
 npm start
 ```
 
-- Public site: http://localhost:3000
+- Public site: http://localhost:3000 (bilingual, searchable, paginated directory with server-injected SEO and social metadata)
 - Workspace: http://localhost:3000/workspace (account workspace in multiuser mode, page manager in single-admin mode)
 - Page-management workspace: http://localhost:3000/console
 - Platform administration: http://localhost:3000/platform-admin (multiuser hosting only)

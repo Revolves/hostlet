@@ -1,56 +1,68 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { setDocumentTitle, setLanguage, useLocale } from "./i18n.js";
+import {
+  PUBLIC_PAGE_SIZE,
+  PUBLIC_QUERY_MAX_LENGTH,
+  formatPublicDate,
+  formatPublicNumber,
+  interpolate,
+  publicCopy,
+  publicDirectoryQuery,
+  publicMeta,
+  statementTokens,
+  visitLabel,
+} from "../../shared/public-site.js";
 import "./public-home.css";
 
-const labels = {
-  brand: "Hostlet",
-  nav: { platform: "平台", applications: "公开应用", workflow: "工作方式", start: "进入工作台" },
-  hero: {
-    eyebrow: "开源静态应用托管平台",
-    lineOne: "让每个作品，",
-    lineTwo: "都有独立的地址。",
-    description: "上传 HTML 或 ZIP，管理公开与私有访问，保留每次发布版本。这里展示本实例已经公开的应用，以及它们真实的访问足迹。",
-    primary: "浏览公开应用",
-    secondary: "进入工作台",
-    proof: "MIT 开源 · 静态托管 · 版本可回滚",
-  },
-  metrics: { applications: "公开应用", workspaces: "活跃空间", visits: "累计访问" },
-  statement: ["作品不该困在文件夹里。", "发布，分享，然后被看见。"],
-  showcase: {
-    eyebrow: "公开应用",
-    title: "正在被访问的作品",
-    description: "只收录当前仍可公开访问的应用。私有应用、分享链接与临时预览不会出现在这里。",
-    search: "搜索应用或空间",
-    sortRecent: "最近更新",
-    sortPopular: "最多访问",
-    all: "全部",
-    empty: "目前还没有公开应用。发布第一个作品后，它会出现在这里。",
-    loading: "正在读取公开应用…",
-    error: "暂时无法读取应用列表，请稍后重试。",
-    visit: "次访问",
-    open: "打开应用",
-  },
-  workflow: {
-    eyebrow: "工作方式",
-    title: "从构建产物到公开链接",
-    steps: [
-      ["01", "上传", "放入单个 HTML 或完整 ZIP 站点，保留目录结构和入口文件。"],
-      ["02", "发布", "选择公开或私有，记录版本，必要时一键回滚到旧版本。"],
-      ["03", "分享", "公开应用拥有独立地址，访问次数在服务端自动记录。"],
-    ],
-  },
-  cta: { title: "准备好发布下一个作品了吗？", description: "进入工作台完成上传、权限设置和版本管理。", action: "进入工作台" },
-  footer: { note: "Hostlet · 你的网站，应该由你做主", workspace: "工作台", account: "账户与工作空间", report: "举报应用" },
-};
+const toneNames = ["editorial", "studio", "archive", "signal"];
 
-const number = (value) => new Intl.NumberFormat("zh-CN").format(value || 0);
-const date = (value) => {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? "" : new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric" }).format(parsed);
-};
+function initialQuery() {
+  if (typeof window === "undefined") return "";
+  return (new URLSearchParams(window.location.search).get("q") || "").slice(0, PUBLIC_QUERY_MAX_LENGTH);
+}
 
-function useReveal() {
+function initialSort() {
+  if (typeof window === "undefined") return "recent";
+  return new URLSearchParams(window.location.search).get("sort") === "popular" ? "popular" : "recent";
+}
+
+function setMeta(selector, content) {
+  let element = document.head.querySelector(selector);
+  if (!element) {
+    element = document.createElement("meta");
+    const property = selector.match(/property="([^"]+)"/)?.[1];
+    const name = selector.match(/name="([^"]+)"/)?.[1];
+    if (property) element.setAttribute("property", property);
+    if (name) element.setAttribute("name", name);
+    document.head.appendChild(element);
+  }
+  element.setAttribute("content", content);
+}
+
+function setLink(rel, href) {
+  let element = document.head.querySelector(`link[rel="${rel}"]`);
+  if (!element) {
+    element = document.createElement("link");
+    element.rel = rel;
+    document.head.appendChild(element);
+  }
+  element.setAttribute("href", href);
+}
+
+function setAlternate(hreflang, href) {
+  let element = document.head.querySelector(`link[rel="alternate"][hreflang="${hreflang}"]`);
+  if (!element) {
+    element = document.createElement("link");
+    element.rel = "alternate";
+    element.hreflang = hreflang;
+    document.head.appendChild(element);
+  }
+  element.setAttribute("href", href);
+}
+
+function useReveal(key) {
   useEffect(() => {
-    const elements = document.querySelectorAll("[data-reveal]");
+    const elements = [...document.querySelectorAll("[data-reveal]:not(.is-visible)")];
     if (!("IntersectionObserver" in window)) {
       elements.forEach((element) => element.classList.add("is-visible"));
       return undefined;
@@ -65,22 +77,27 @@ function useReveal() {
     }, { threshold: 0.14 });
     elements.forEach((element) => observer.observe(element));
     return () => observer.disconnect();
-  }, []);
+  }, [key]);
 }
 
 function Mark() {
   return <span className="public-mark" aria-hidden="true"><span>H</span></span>;
 }
 
-function Count({ value }) {
-  return <span className="public-count" aria-label={number(value)}>{number(value)}</span>;
+function Count({ value, locale, unavailable }) {
+  const text = value === null || value === undefined ? "—" : formatPublicNumber(value, locale);
+  return <span className="public-count" aria-label={text === "—" ? unavailable : text}>{text}</span>;
 }
 
-function ApplicationCard({ app, index }) {
+function ApplicationCard({ app, index, copy, locale }) {
+  const tonal = toneNames.includes(app.className) ? app.className : "studio";
   const initials = app.title.trim().slice(0, 2).toUpperCase() || "HL";
+  const workspace = app.workspaceName || (app.kind === "legacy" ? copy.app.platform : copy.app.workspace);
+  const updated = formatPublicDate(app.updatedAt, locale);
+  const visits = formatPublicNumber(app.visits, locale);
   return (
-    <article className={`public-app public-app--${app.className}`} data-reveal style={{ "--delay": `${Math.min(index, 6) * 60}ms` }}>
-      <a className="public-app__link" href={app.url} target="_blank" rel="noopener noreferrer" aria-label={`${labels.showcase.open}：${app.title}`}>
+    <article className={`public-app public-app--${tonal}`} data-reveal style={{ "--delay": `${Math.min(index, 6) * 60}ms` }}>
+      <a className="public-app__link" href={app.url} target="_blank" rel="noopener noreferrer" aria-label={`${copy.showcase.open}: ${app.title}`}>
         <div className="public-app__visual" aria-hidden="true">
           <span className="public-app__index">{String(index + 1).padStart(2, "0")}</span>
           <span className="public-app__monogram">{initials}</span>
@@ -90,12 +107,12 @@ function ApplicationCard({ app, index }) {
         </div>
         <div className="public-app__body">
           <div className="public-app__meta">
-            <span>{app.workspaceName || (app.kind === "legacy" ? "平台应用" : "个人空间")}</span>
-            <time dateTime={app.updatedAt}>{date(app.updatedAt)}</time>
+            <span>{workspace}</span>
+            {updated ? <time dateTime={app.updatedAt}>{updated}</time> : null}
           </div>
           <h3>{app.title}</h3>
           <div className="public-app__foot">
-            <span><strong>{number(app.visits)}</strong> {labels.showcase.visit}</span>
+            <span><strong>{visits}</strong> {visitLabel(app.visits, locale)}</span>
             <span className="public-app__arrow" aria-hidden="true">↗</span>
           </div>
         </div>
@@ -105,28 +122,98 @@ function ApplicationCard({ app, index }) {
 }
 
 export default function PublicHome() {
-  const [data, setData] = useState({ apps: [], stats: { applications: 0, workspaces: 0, visits: 0 } });
+  const locale = useLocale();
+  const copy = publicCopy[locale] || publicCopy["zh-CN"];
+  const [apps, setApps] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [page, setPage] = useState({ limit: PUBLIC_PAGE_SIZE, offset: 0, total: 0, hasMore: false });
   const [state, setState] = useState("loading");
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("recent");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [sort, setSort] = useState(initialSort);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const heroRef = useRef(null);
   const statementRef = useRef(null);
-  useReveal();
+  const listRequestRef = useRef(0);
+  const moreRequestRef = useRef(0);
+  const moreControllerRef = useRef(null);
+  useReveal(`${state}:${apps.length}`);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/public/apps", { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Request failed")))
-      .then((payload) => {
-        if (!cancelled) {
-          setData({ apps: payload.apps || [], stats: payload.stats || data.stats });
-          setState("ready");
-        }
-      })
-      .catch(() => { if (!cancelled) setState("error"); });
-    return () => { cancelled = true; };
+    document.documentElement.classList.add("public-site-document");
+    document.body.classList.add("public-site-document");
+    return () => {
+      document.documentElement.classList.remove("public-site-document");
+      document.body.classList.remove("public-site-document");
+    };
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 260);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    const request = ++listRequestRef.current;
+    moreRequestRef.current += 1;
+    moreControllerRef.current?.abort();
+    setLoadingMore(false);
+    setLoadMoreError(false);
+    setState("loading");
+    setApps([]);
+    setPage({ limit: PUBLIC_PAGE_SIZE, offset: 0, total: 0, hasMore: false });
+    const controller = new AbortController();
+    const params = publicDirectoryQuery({ limit: PUBLIC_PAGE_SIZE, offset: 0, sort, query: debouncedQuery });
+    fetch(`/api/public/apps?${params}`, { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Request failed");
+        return response.json();
+      })
+      .then((payload) => {
+        if (request !== listRequestRef.current) return;
+        setApps(Array.isArray(payload.apps) ? payload.apps : []);
+        setStats(payload.stats && typeof payload.stats === "object" ? payload.stats : { applications: 0, workspaces: 0, visits: 0 });
+        setPage(payload.page || { limit: PUBLIC_PAGE_SIZE, offset: 0, total: payload.apps?.length || 0, hasMore: false });
+        setState("ready");
+      })
+      .catch((error) => {
+        if (error.name === "AbortError" || request !== listRequestRef.current) return;
+        setState("error");
+      });
+    return () => controller.abort();
+  }, [debouncedQuery, sort, reloadKey]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (debouncedQuery) url.searchParams.set("q", debouncedQuery);
+    else url.searchParams.delete("q");
+    if (sort === "popular") url.searchParams.set("sort", "popular");
+    else url.searchParams.delete("sort");
+    window.history.replaceState(null, "", url);
+  }, [debouncedQuery, sort]);
+
+  useEffect(() => {
+    const meta = publicMeta({ locale, origin: window.location.origin });
+    setDocumentTitle(meta.title);
+    document.documentElement.lang = meta.htmlLang;
+    setMeta('meta[name="description"]', meta.description);
+    setMeta('meta[property="og:title"]', meta.title);
+    setMeta('meta[property="og:description"]', meta.description);
+    setMeta('meta[property="og:url"]', meta.canonical);
+    setMeta('meta[property="og:locale"]', meta.ogLocale);
+    setMeta('meta[property="og:locale:alternate"]', meta.locale === "en" ? "zh_CN" : "en_US");
+    setMeta('meta[property="og:image"]', meta.ogImage);
+    setMeta('meta[property="og:image:alt"]', meta.ogImageAlt);
+    setMeta('meta[name="twitter:title"]', meta.title);
+    setMeta('meta[name="twitter:description"]', meta.description);
+    setMeta('meta[name="twitter:image"]', meta.ogImage);
+    setMeta('meta[name="twitter:image:alt"]', meta.ogImageAlt);
+    setLink("canonical", meta.canonical);
+    for (const item of meta.alternates) setAlternate(item.hreflang, item.href);
+    return () => setDocumentTitle(null);
+  }, [locale]);
 
   useEffect(() => {
     const onPointer = (event) => {
@@ -159,106 +246,169 @@ export default function PublicHome() {
     return () => observer.disconnect();
   }, []);
 
-  const shown = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return data.apps
-      .filter((app) => !needle || [app.title, app.workspaceName, app.workspaceType].some((value) => String(value || "").toLowerCase().includes(needle)))
-      .sort((left, right) => sort === "popular"
-        ? right.visits - left.visits || right.updatedAt.localeCompare(left.updatedAt)
-        : right.updatedAt.localeCompare(left.updatedAt));
-  }, [data.apps, query, sort]);
+  function changeLocale(next) {
+    if (next === locale) return;
+    setLanguage(next);
+    const url = new URL(window.location.href);
+    if (next === "en") url.searchParams.set("lang", "en");
+    else url.searchParams.delete("lang");
+    window.history.replaceState(null, "", url);
+  }
+
+  function clearSearch() {
+    setQuery("");
+    setDebouncedQuery("");
+  }
+
+  async function loadMore() {
+    if (loadingMore || state !== "ready" || !page.hasMore) return;
+    const request = ++moreRequestRef.current;
+    const controller = new AbortController();
+    moreControllerRef.current?.abort();
+    moreControllerRef.current = controller;
+    setLoadingMore(true);
+    setLoadMoreError(false);
+    const offset = page.offset + page.limit;
+    const params = publicDirectoryQuery({ limit: PUBLIC_PAGE_SIZE, offset, sort, query: debouncedQuery });
+    try {
+      const response = await fetch(`/api/public/apps?${params}`, { cache: "no-store", signal: controller.signal });
+      if (!response.ok) throw new Error("Request failed");
+      const payload = await response.json();
+      if (request !== moreRequestRef.current) return;
+      setApps((previous) => {
+        const seen = new Set(previous.map((app) => app.id));
+        const additions = Array.isArray(payload.apps) ? payload.apps.filter((app) => !seen.has(app.id)) : [];
+        return [...previous, ...additions];
+      });
+      setStats(payload.stats && typeof payload.stats === "object" ? payload.stats : stats);
+      setPage(payload.page || { ...page, offset, hasMore: false });
+    } catch (error) {
+      if (error.name !== "AbortError" && request === moreRequestRef.current) setLoadMoreError(true);
+    } finally {
+      if (request === moreRequestRef.current) setLoadingMore(false);
+    }
+  }
+
+  const resultSummary = state === "ready" && page.total > 0
+    ? interpolate(copy.showcase.resultCount, { count: formatPublicNumber(page.total, locale) })
+    : "";
 
   return (
     <div className="public-site">
-      <a className="public-skip" href="#main">跳到主要内容</a>
+      <a className="public-skip" href="#main">{copy.a11y.skip}</a>
       <header className="public-nav">
-        <a className="public-nav__brand" href="/" aria-label="Hostlet"><Mark /><span>{labels.brand}</span></a>
-        <nav className={`public-nav__links${menuOpen ? " is-open" : ""}`} aria-label="主导航">
-          <a href="#platform" onClick={() => setMenuOpen(false)}>{labels.nav.platform}</a>
-          <a href="#applications" onClick={() => setMenuOpen(false)}>{labels.nav.applications}</a>
-          <a href="#workflow" onClick={() => setMenuOpen(false)}>{labels.nav.workflow}</a>
-          <a className="public-nav__cta" href="/workspace" onClick={() => setMenuOpen(false)}>{labels.nav.start}<span aria-hidden="true">↗</span></a>
-        </nav>
-        <button className="public-nav__toggle" type="button" aria-label="打开导航" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
-          <span /><span />
-        </button>
+        <a className="public-nav__brand" href="/" aria-label="Hostlet"><Mark /><span>{copy.brand}</span></a>
+        <div className="public-nav__actions">
+          <div className="public-language" role="group" aria-label={copy.a11y.language}>
+            <button type="button" lang="zh-CN" aria-pressed={locale === "zh-CN"} onClick={() => changeLocale("zh-CN")}>中文</button>
+            <span aria-hidden="true">/</span>
+            <button type="button" lang="en" aria-pressed={locale === "en"} onClick={() => changeLocale("en")}>EN</button>
+          </div>
+          <a className="public-nav__cta" href="/workspace">{copy.nav.start}<span aria-hidden="true">↗</span></a>
+        </div>
       </header>
 
-      <main id="main">
+      <main id="main" tabIndex={-1}>
         <section className="public-hero" id="platform" ref={heroRef}>
           <div className="public-hero__grid" aria-hidden="true" />
           <div className="public-hero__orb" aria-hidden="true" />
           <div className="public-hero__inner">
-            <p className="public-eyebrow"><span />{labels.hero.eyebrow}</p>
-            <h1><span>{labels.hero.lineOne}</span><span>{labels.hero.lineTwo}</span></h1>
-            <p className="public-hero__description">{labels.hero.description}</p>
+            <p className="public-eyebrow"><span />{copy.hero.eyebrow}</p>
+            <h1><span>{copy.hero.lineOne}</span>{" "}<span>{copy.hero.lineTwo}</span></h1>
+            <p className="public-hero__description">{copy.hero.description}</p>
             <div className="public-hero__actions">
-              <a className="public-button public-button--primary" href="#applications">{labels.hero.primary}<span aria-hidden="true">↓</span></a>
-              <a className="public-button public-button--quiet" href="/workspace">{labels.hero.secondary}<span aria-hidden="true">↗</span></a>
+              <a className="public-button public-button--primary" href="#applications">{copy.hero.primary}<span aria-hidden="true">↓</span></a>
+              <a className="public-button public-button--quiet" href="/workspace">{copy.hero.secondary}<span aria-hidden="true">↗</span></a>
             </div>
-            <p className="public-hero__proof">{labels.hero.proof}</p>
+            <p className="public-hero__proof">{copy.hero.proof}</p>
           </div>
           <div className="public-hero__metrics" data-reveal>
-            <div><span>{labels.metrics.applications}</span><strong><Count value={data.stats.applications} /></strong></div>
-            <div><span>{labels.metrics.workspaces}</span><strong><Count value={data.stats.workspaces} /></strong></div>
-            <div><span>{labels.metrics.visits}</span><strong><Count value={data.stats.visits} /></strong></div>
+            <div><span>{copy.metrics.applications}</span><strong><Count value={stats ? stats.applications : null} locale={locale} unavailable={copy.a11y.unavailable} /></strong></div>
+            <div><span>{copy.metrics.workspaces}</span><strong><Count value={stats ? stats.workspaces : null} locale={locale} unavailable={copy.a11y.unavailable} /></strong></div>
+            <div><span>{copy.metrics.visits}</span><strong><Count value={stats ? stats.visits : null} locale={locale} unavailable={copy.a11y.unavailable} /></strong></div>
           </div>
-          <div className="public-hero__scroll" aria-hidden="true"><span />SCROLL</div>
+          <div className="public-hero__scroll" aria-hidden="true"><span />{copy.hero.scroll}</div>
         </section>
 
-        <section className="public-statement" aria-label="平台主张" ref={statementRef}>
+        <section className="public-statement" aria-label={copy.a11y.statement} ref={statementRef}>
           <p>
-            {labels.statement.map((line, lineIndex) => (
-              <span className="public-statement__line" key={line}>
-                {line.split("").map((character, index) => (
-                  <span className="public-statement__word" key={`${lineIndex}-${index}`} style={{ "--word": index }}>{character}</span>
-                ))}
-              </span>
-            ))}
+            {copy.statement.map((line, lineIndex) => {
+              const tokens = statementTokens(line, locale);
+              return (
+                <span className="public-statement__line" key={line}>
+                  {tokens.map((token, index) => (
+                    <span className="public-statement__word" key={`${lineIndex}-${index}`} style={{ "--word": index }}>
+                      {token}{locale === "en" && index < tokens.length - 1 ? " " : ""}
+                    </span>
+                  ))}
+                </span>
+              );
+            })}
           </p>
         </section>
 
         <section className="public-showcase" id="applications">
           <div className="public-section-head" data-reveal>
             <div>
-              <p className="public-eyebrow"><span />{labels.showcase.eyebrow}</p>
-              <h2>{labels.showcase.title}</h2>
+              <p className="public-eyebrow"><span />{copy.showcase.eyebrow}</p>
+              <h2>{copy.showcase.title}</h2>
             </div>
-            <p>{labels.showcase.description}</p>
+            <p>{copy.showcase.description}</p>
           </div>
 
           <div className="public-toolbar" data-reveal>
             <label className="public-search">
-              <span className="visually-hidden">{labels.showcase.search}</span>
+              <span className="visually-hidden">{copy.showcase.search}</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
-              <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={labels.showcase.search} />
+              <input type="search" value={query} maxLength={PUBLIC_QUERY_MAX_LENGTH} autoComplete="off" onChange={(event) => setQuery(event.target.value)} placeholder={copy.showcase.search} />
             </label>
-            <div className="public-sort" role="group" aria-label="排序">
-              <button type="button" aria-pressed={sort === "recent"} onClick={() => setSort("recent")}>{labels.showcase.sortRecent}</button>
-              <button type="button" aria-pressed={sort === "popular"} onClick={() => setSort("popular")}>{labels.showcase.sortPopular}</button>
+            <div className="public-sort" role="group" aria-label={copy.a11y.sort}>
+              <button type="button" aria-pressed={sort === "recent"} onClick={() => setSort("recent")}>{copy.showcase.sortRecent}</button>
+              <button type="button" aria-pressed={sort === "popular"} onClick={() => setSort("popular")}>{copy.showcase.sortPopular}</button>
             </div>
           </div>
+          <p className="public-results" role="status" aria-live="polite">{state === "loading" ? copy.showcase.loading : resultSummary}</p>
 
           {state === "loading" ? (
-            <div className="public-grid" aria-label={labels.showcase.loading}>
-              {[0, 1, 2].map((item) => <div className="public-skeleton" key={item}><span /><span /><span /></div>)}
+            <div className="public-grid" aria-label={copy.showcase.loading} aria-busy="true">
+              {[0, 1, 2].map((item) => <div className="public-skeleton" key={item} aria-hidden="true"><span /><span /><span /></div>)}
             </div>
           ) : state === "error" ? (
-            <div className="public-empty" role="alert">{labels.showcase.error}</div>
-          ) : shown.length ? (
-            <div className="public-grid">{shown.map((app, index) => <ApplicationCard app={app} index={index} key={app.id} />)}</div>
+            <div className="public-empty public-empty--error" role="alert">
+              <p>{copy.showcase.error}</p>
+              <button type="button" className="public-button public-button--quiet" onClick={() => setReloadKey((value) => value + 1)}>{copy.showcase.retry}</button>
+            </div>
+          ) : apps.length ? (
+            <>
+              <div className="public-grid" aria-label={copy.a11y.showcase}>
+                {apps.map((app, index) => <ApplicationCard app={app} index={index} key={app.id} copy={copy} locale={locale} />)}
+              </div>
+              <div className="public-load">
+                {loadMoreError ? <p className="public-load__error" role="alert">{copy.showcase.loadMoreError}</p> : null}
+                {page.hasMore ? (
+                  <button type="button" className="public-load__button" onClick={loadMore} disabled={loadingMore} aria-busy={loadingMore}>
+                    {loadingMore ? copy.showcase.loadingMore : copy.showcase.loadMore}
+                  </button>
+                ) : <p className="public-load__done">{copy.showcase.allLoaded}</p>}
+              </div>
+            </>
           ) : (
-            <div className="public-empty">{query ? "没有找到匹配的应用。" : labels.showcase.empty}</div>
+            <div className="public-empty">
+              <p>{debouncedQuery ? copy.showcase.searchEmpty : copy.showcase.empty}</p>
+              {debouncedQuery
+                ? <button type="button" className="public-button public-button--quiet" onClick={clearSearch}>{copy.showcase.clearSearch}</button>
+                : <a className="public-button public-button--primary" href="/workspace">{copy.hero.secondary}</a>}
+            </div>
           )}
         </section>
 
         <section className="public-workflow" id="workflow">
           <div className="public-workflow__head" data-reveal>
-            <p className="public-eyebrow"><span />{labels.workflow.eyebrow}</p>
-            <h2>{labels.workflow.title}</h2>
+            <p className="public-eyebrow"><span />{copy.workflow.eyebrow}</p>
+            <h2>{copy.workflow.title}</h2>
           </div>
           <ol className="public-steps">
-            {labels.workflow.steps.map(([index, title, description], stepIndex) => (
+            {copy.workflow.steps.map(([index, title, description], stepIndex) => (
               <li key={index} data-reveal style={{ "--delay": `${stepIndex * 100}ms` }}>
                 <span className="public-steps__index">{index}</span>
                 <h3>{title}</h3>
@@ -270,16 +420,16 @@ export default function PublicHome() {
 
         <section className="public-cta" data-reveal>
           <div>
-            <h2>{labels.cta.title}</h2>
-            <p>{labels.cta.description}</p>
+            <h2>{copy.cta.title}</h2>
+            <p>{copy.cta.description}</p>
           </div>
-          <a className="public-button public-button--primary" href="/workspace">{labels.cta.action}<span aria-hidden="true">↗</span></a>
+          <a className="public-button public-button--primary" href="/workspace">{copy.cta.action}<span aria-hidden="true">↗</span></a>
         </section>
       </main>
 
       <footer className="public-footer">
-        <div><Mark /><span>{labels.footer.note}</span></div>
-        <nav aria-label="页脚导航"><a href="/workspace">{labels.footer.workspace}</a><a href="/account">{labels.footer.account}</a><a href="/report">{labels.footer.report}</a></nav>
+        <div><Mark /><span>{copy.footer.note}</span></div>
+        <nav aria-label={copy.a11y.footerNav}><a href="/workspace">{copy.footer.workspace}</a><a href="/account">{copy.footer.account}</a><a href="/report">{copy.footer.report}</a></nav>
       </footer>
     </div>
   );

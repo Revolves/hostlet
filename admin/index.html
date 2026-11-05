@@ -1,18 +1,42 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1f201c" />
-    <meta name="description" content="Hostlet 是开源的静态前端托管平台，展示公开应用并记录真实访问，支持版本管理和私有分享。" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#121411" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Default metadata uses a placeholder origin; the Node server replaces this block with the request origin. -->
+    <!-- HOSTLET_META_START -->
     <title>Hostlet · 让每个作品都有独立的地址</title>
-    <meta property="og:title" content="Hostlet · 让每个作品都有独立的地址" />
-    <meta property="og:description" content="开源静态应用托管平台，浏览公开作品，记录每一次访问。" />
+    <meta name="description" content="Hostlet 是开源的静态应用托管平台。浏览本实例公开的作品，查看真实访问量，并了解发布、版本与分享方式。" />
+    <link rel="canonical" href="https://hostlet.example.com/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://hostlet.example.com/" />
+    <link rel="alternate" hreflang="en" href="https://hostlet.example.com/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://hostlet.example.com/" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:site_name" content="Hostlet" />
     <meta property="og:type" content="website" />
+    <meta property="og:title" content="Hostlet · 让每个作品都有独立的地址" />
+    <meta property="og:description" content="Hostlet 是开源的静态应用托管平台。浏览本实例公开的作品，查看真实访问量，并了解发布、版本与分享方式。" />
+    <meta property="og:url" content="https://hostlet.example.com/" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:image" content="https://hostlet.example.com/social-card.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Hostlet：让每个作品都有独立的地址" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Hostlet · 让每个作品都有独立的地址" />
+    <meta name="twitter:description" content="Hostlet 是开源的静态应用托管平台。浏览本实例公开的作品，查看真实访问量，并了解发布、版本与分享方式。" />
+    <meta name="twitter:image" content="https://hostlet.example.com/social-card.png" />
+    <meta name="twitter:image:alt" content="Hostlet：让每个作品都有独立的地址" />
+    <!-- HOSTLET_META_END -->
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Hostlet 需要 JavaScript 才能浏览公开应用和进入工作台。Hostlet requires JavaScript to browse public apps and open the workspace.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

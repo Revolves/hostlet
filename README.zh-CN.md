@@ -18,7 +18,7 @@ npm run build
 npm start
 ```
 
-官网前台位于 `http://localhost:3000`，展示当前实例已公开的应用与累计访问数；统一工作台位于 `http://localhost:3000/workspace`，多用户模式下进入账户与团队工作台，单管理员模式下进入页面管理。实例页面管理工作区位于 `http://localhost:3000/console`，平台管理位于 `http://localhost:3000/platform-admin`，托管页面使用 `http://localhost:8080/p/<路径>/`。公开应用只在访客成功打开其入口文档时计数，静态资源请求、HEAD 请求、私有分享和预览不计入；访问计数保存在 `data/hostlet.sqlite` 的 `public_page_visits` 表中。单管理员私有页面使用管理员密码，不适合把该密码交给其他人。使用 `npm test` 执行自动化测试。
+官网前台位于 `http://localhost:3000`，展示当前实例已公开的应用与累计访问数，支持中英文切换、公开目录搜索、最近更新/最多访问排序和分页加载；SEO 与分享卡片元数据由服务端按实例 origin 注入。统一工作台位于 `http://localhost:3000/workspace`，多用户模式下进入账户与团队工作台，单管理员模式下进入页面管理。实例页面管理工作区位于 `http://localhost:3000/console`，平台管理位于 `http://localhost:3000/platform-admin`，托管页面使用 `http://localhost:8080/p/<路径>/`。公开应用只在访客成功打开其入口文档时计数，静态资源请求、HEAD 请求、私有分享和预览不计入；访问计数保存在 `data/hostlet.sqlite` 的 `public_page_visits` 表中。单管理员私有页面使用管理员密码，不适合把该密码交给其他人。使用 `npm test` 执行自动化测试。
 
 ## 配置多用户与自部署
 

@@ -49,6 +49,7 @@ import { createPlatformAdminRouter } from "./platform-admin-router.js";
 import { createSecurityLog, createSecurityRequestLogger } from "./security-log.js";
 import { createOperationsStatus } from "./operations-status.js";
 import { createPublicDirectoryService } from "./public-directory.js";
+import { publicIndexLanguage, readPublicIndexTemplate, renderPublicIndexHtml } from "./public-index.js";
 import { DEFAULT_QUOTAS } from "./quotas.js";
 import { FileSiteStorage, sourceTypeFromFilename } from "./storage.js";
 import { signGrant } from "./tokens.js";
@@ -670,9 +671,13 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   });
   const registrationEnabled = () => Boolean(!config.ipHosting && accountSender && (platformAdmin && db.prepare("SELECT 1 FROM platform_settings WHERE id=1").get() ? platformAdmin.getSettings().registrationEnabled : config.registrationEnabled));
   admin.get("/api/features", (_req, res) => res.json({ multiuser: Boolean(accountSender), registration: registrationEnabled(), hostingDomain: accountSender ? hostingConfig?.appDomain || null : null, ipHostingOrigin: accountSender ? config.ipHosting?.contentOrigin || null : null, retention: platformAdmin ? platformAdmin.getSettings().retention : {mode:'long-term',days:null,notifyBeforeDays:null}, retentionActive: Boolean(retentionScheduler?.isRunning()) }));
-  admin.get("/api/public/apps", (_req, res) => {
+  admin.get("/api/public/apps", (req, res) => {
     res.set("Cache-Control", "no-store");
-    res.json(publicDirectory.list());
+    try {
+      res.json(publicDirectory.list(req.query));
+    } catch {
+      res.status(400).json({ error: "Invalid public directory query.", code: "INVALID_QUERY" });
+    }
   });
   if (accountSender) {
     ephemeralCleanupScheduler=createRetentionScheduler({coordinator:createEphemeralCleanup({db}),intervalMs:60000,
@@ -831,7 +836,18 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   admin.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
 
   if (fs.existsSync(config.adminDistDir)) {
-    admin.get("/", (_req, res) => res.sendFile(path.join(config.adminDistDir, "index.html")));
+    const adminIndexFile = path.join(config.adminDistDir, "index.html");
+    let adminIndexTemplate;
+    admin.get("/", (req, res) => {
+      try {
+        adminIndexTemplate ??= readPublicIndexTemplate(adminIndexFile);
+        res.set("Cache-Control", "no-cache");
+        res.set("Content-Language", publicIndexLanguage(req.query.lang));
+        res.type("html").send(renderPublicIndexHtml(adminIndexTemplate, { origin: config.adminOrigin, lang: req.query.lang }));
+      } catch {
+        res.sendFile(adminIndexFile);
+      }
+    });
     admin.use(express.static(config.adminDistDir, { index: false, maxAge: "1h" }));
     admin.get("/{*splat}", (_req, res) => {
       res.sendFile(path.join(config.adminDistDir, "index.html"));
