@@ -70,7 +70,7 @@ export const publicCopy = {
     source: {
       eyebrow: "GitHub",
       title: "开源项目与构建记录",
-      description: "在 GitHub 查看我的开源项目与提交记录。Hostlet 的正式源码仓库公开后，可由实例配置直接切换到这个入口。",
+      description: "查看 Hostlet 的源码、提交记录与版本发布。问题与建议欢迎在 GitHub 提出。",
       action: "访问 GitHub",
     },
     footer: { note: "Hostlet · 你的网站，应该由你做主", workspace: "工作台", account: "账户与工作空间", report: "举报应用" },
@@ -143,7 +143,7 @@ export const publicCopy = {
     source: {
       eyebrow: "GITHUB",
       title: "Open-source work, in the open",
-      description: "Browse my open-source projects and commit history on GitHub. Once the canonical Hostlet repository is public, this instance can point directly to it.",
+      description: "Read the Hostlet source, commit history, and releases. Issues and ideas are welcome on GitHub.",
       action: "Visit GitHub",
     },
     footer: { note: "Hostlet · Your site should be yours to control", workspace: "Workspace", account: "Account and workspaces", report: "Report an app" },
