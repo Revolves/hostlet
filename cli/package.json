@@ -22,15 +22,15 @@
     "publish",
     "deployment"
   ],
+  "homepage": "https://hostlet.cn",
   "repository": {
     "type": "git",
-    "url": "git+https://gitee.com/jiangh277/hostlet.git",
+    "url": "git+https://github.com/Revolves/hostlet.git",
     "directory": "cli"
   },
   "bugs": {
-    "url": "https://gitee.com/jiangh277/hostlet/issues"
+    "url": "https://github.com/Revolves/hostlet/issues"
   },
-  "homepage": "https://gitee.com/jiangh277/hostlet/tree/master/cli#readme",
   "dependencies": {
     "jszip": "^3.10.2"
   }

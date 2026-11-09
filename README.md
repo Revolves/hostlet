@@ -6,9 +6,13 @@ Your website belongs to more than any one product.
 
 An open-source platform for hosting and sharing static frontend applications, with personal and team workspaces. It uses Express, SQLite and a React/Vite workspace interface. The original single-administrator mode is also available.
 
-The multiuser implementation is under development and requires deployment and security acceptance before public use. See [Chinese quick start](README.zh-CN.md) and [deployment guidance](docs/deployment.md).
+Multiuser mode is implemented and runs on the official instance. Review the [deployment guidance](docs/deployment.md) and security notes before exposing a self-hosted instance to untrusted users. See also the [Chinese quick start](README.zh-CN.md).
+
+Official instance: <https://hostlet.cn>. It runs single-domain multiuser hosting with username registration. Public showcase: <https://hostlet.cn/p/hostlet/>.
 
 Hostlet is open source under the [MIT License](LICENSE).
+
+Source, issues and releases: <https://github.com/Revolves/hostlet>.
 
 ## Run
 
@@ -31,6 +35,7 @@ npm start
 - Page-management workspace: http://localhost:3000/console
 - Platform administration: http://localhost:3000/platform-admin (multiuser hosting only)
 - Hosted pages: http://localhost:8080/p/example/
+- GitHub source link: `PUBLIC_GITHUB_URL` and `PUBLIC_GITHUB_LABEL` (defaults to this repository)
 - Development: `npm run dev`, then http://localhost:5173
 - Verification: `npm test` and `npm run build`
 
@@ -58,7 +63,9 @@ npm install -g ./hostlet-cli-0.1.0.tgz
 
 Running from source remains supported with `node cli/hostlet.js ...` (or `npm run pack:cli` to build the tarball).
 
-Create a 30-day API credential with read, publish, and share scopes, then set `HOSTLET_URL` and `HOSTLET_TOKEN` in the environment. Do not commit the token or write it to logs.
+Create a 30-day API credential with read, publish, and share scopes, then set `HOSTLET_TOKEN` in the environment. `HOSTLET_URL` is optional and defaults to `https://hostlet.cn`; set it for a custom instance. The target instance must expose the account credential flow and `/api/cli`. Do not use the administrator password as a token, and do not commit the token or write it to logs.
+
+The official `hostlet.cn` deployment exposes username registration and account API credentials, so it can be used directly for CLI and Skill publishing. Username accounts cannot recover passwords by email yet; keep the password safe.
 
 ```sh
 hostlet workspaces
@@ -76,11 +83,21 @@ hostlet revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
 
 Publishing accepts HTML, ZIP, or a directory and creates a private application by default. Rollback requires the current revision; a `CONFLICT` response means the application changed and must be refreshed. A credential must include the `share` scope to list, create, or revoke shares. Share passwords can be supplied through `HOSTLET_SHARE_PASSWORD` or `--password-stdin`, and `--expires` accepts a future ISO-8601 time. A newly created share link is shown only once. After a network error or 5xx response, list existing shares before retrying because a created link cannot be recovered. Only HTTPS is accepted for remote instances; HTTP is limited to loopback testing.
 
-## Multiuser development
+## Agent Skill
 
-The multiuser features are under development and are disabled by default. Set `MULTIUSER_ENABLED=true`, configure the SMTP settings in `.env.example`, and set `REGISTRATION_ENABLED=true` to enable account registration. SMTP requires TLS or STARTTLS. Set `ADMIN_ORIGIN` to the exact externally visible management origin and `COOKIE_SECURE=true` for HTTPS. Account links and team invitations use that origin. User accounts and workspaces are separate from the existing administrator account and its pages; existing pages are not automatically assigned to a user.
+The installable publishing skill is in [`skills/hostlet-publish/`](skills/hostlet-publish/). It reuses the CLI, defaults to the official `https://hostlet.cn` instance, and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation of the target workspace and file boundary, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
 
-Workspace hosting can be enabled with `APPS_DOMAIN` and wildcard DNS/HTTPS, routed to the pages service with the original Host header. Use a different registrable domain for the management service. Applications default to private; editors can make them public or create revocable, optionally password-protected share links. Workspace quotas and administrative suspension are available. Each application may retain up to 20 versions, including the current version; editors can delete old versions to make room. Interrupted version deletion is retried at startup, and pending files remain charged against storage quota. Administrators can select long-term retention or inactivity cleanup with advance email notification; the default is long-term. Verified account holders can delete their account after confirming the current password; personal applications are removed, team applications remain with the team, sessions are revoked, and the account is retained only as a pseudonymous foreign-key tombstone. The last owner of a team must transfer ownership first. Account deletion records a durable task; if cleanup is interrupted, startup resumes it before serving requests. An explicit offline workflow migrates selected legacy pages to a verified account; see [legacy migration](docs/legacy-migration.md). This implementation requires further real HTTPS, SMTP, proxy and deployment verification before exposing it to untrusted users. Startup recovers recorded interrupted uploads and publications; older unrecorded leftovers and empty files or directories created before a recovery record require careful manual inspection. See [deployment guidance](docs/deployment.md) for the recovery boundaries.
+## Multiuser mode
+
+Multiuser features are disabled by default. Set `MULTIUSER_ENABLED=true` and `REGISTRATION_ENABLED=true` to enable account registration. Email registration requires SMTP with TLS or STARTTLS. Username accounts can be enabled with `USERNAME_REGISTRATION_ENABLED=true`; they sign in immediately without email verification, accept 3-32 lowercase letters, digits, underscores, or hyphens, and cannot recover passwords by email. Set `ADMIN_ORIGIN` to the exact externally visible management origin and `COOKIE_SECURE=true` for HTTPS. Account links and team invitations use that origin. User accounts and workspaces are separate from the existing administrator account and its pages; existing pages are not automatically assigned to a user.
+
+Workspace hosting can be enabled with `APPS_DOMAIN` and wildcard DNS/HTTPS, routed to the pages service with the original Host header. Use a different registrable domain for the management service for the strongest isolation. For a demo deployment with one registrable domain, set `SINGLE_DOMAIN_HOSTING=true` and point `APPS_DOMAIN` at a subdomain such as `apps.hostlet.cn`; functionality is retained, but isolation drops from cross-site to same-site cross-origin, with `__Host-` cookies and strict Origin checks enforced.
+
+Applications default to private; editors can make them public or create revocable, optionally password-protected share links. Workspace quotas and administrative suspension are available. Each application may retain up to 20 versions, including the current version; editors can delete old versions to make room. Interrupted version deletion is retried at startup, and pending files remain charged against storage quota.
+
+Administrators can select long-term retention or inactivity cleanup with advance email notification; the default is long-term. Verified account holders can delete their account after confirming the current password; personal applications are removed, team applications remain with the team, sessions are revoked, and the account is retained only as a pseudonymous foreign-key tombstone. The last owner of a team must transfer ownership first. Account deletion records a durable task; if cleanup is interrupted, startup resumes it before serving requests. An explicit offline workflow migrates selected legacy pages to a verified account; see [legacy migration](docs/legacy-migration.md).
+
+Before exposing a self-hosted instance to untrusted users, verify HTTPS, SMTP, proxy behavior, backups and content governance in the target environment. Startup recovers recorded interrupted uploads and publications; older unrecorded leftovers and empty files or directories created before a recovery record require careful manual inspection. See [deployment guidance](docs/deployment.md) for the recovery boundaries.
 
 For workspace ZIP uploads, leave the entry path blank to detect a single HTML entry. If several are found, select one and upload again; alternatively enter a known HTML path explicitly. At most 200 candidates and 64 KiB of candidate paths are offered for selection; larger sets require an explicit entry path. Workspace apps have their own domain root. A subdirectory containing `index.html` can be opened at its trailing-slash URL; SPA fallback routing is not provided. Applications execute in visitors' browsers, so private keys must not be included in uploaded files.
 
@@ -96,7 +113,7 @@ Default upload size: 50 MiB (`MAX_UPLOAD_BYTES`). ZIP limits: 4,000 entries incl
 
 ## Deployment
 
-For the single-host container example and its verification limits, see [deployment](docs/deployment.md).
+For a single-domain Ubuntu host deployment without Docker, see [host deployment](docs/host-deployment.md). For the single-host container example and its verification limits, see [deployment](docs/deployment.md).
 
 Use separate HTTPS hostnames for administration and uploaded content, preferably on separate registrable domains. Route the admin hostname to port 3000 and the content hostname to port 8080. Do not expose the admin API on the content hostname. Set `PUBLIC_BASE_URL`, `ADMIN_ORIGIN`, and `ADMIN_ORIGINS` to the actual addresses, and `COOKIE_SECURE=true` under HTTPS. Preserve the hosted content's CSP and MIME headers. Keep grant URLs out of proxy access logs, and disable shared caching for private content.
 
