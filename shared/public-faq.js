@@ -15,6 +15,8 @@ export const publicFaq = {
   en: {
     title: "Frequently asked questions about Hostlet",
     items: [
+      ["What does Hostlet Skill do?", "It lets an AI assistant publish static projects, update existing apps, and inspect releases through the CLI. Account and credential authorization is required on first use. New apps are private by default; configure public access in the workspace."],
+      ["Where do I install the Skill?", "Follow the Hostlet Skill installation guide in the GitHub repository. Configure the skills directory supported by your assistant, then start a new session to load it."],
       ["What is Hostlet?", "Hostlet is an MIT-licensed, open-source static application hosting platform developed by Revolves with a publishing Skill for AI creators and teams delivering pages, reports, and static apps."],
       ["What files can I publish?", "Upload a single HTML file or a ZIP archive containing a complete static site, keeping its resource directories and entry file."],
       ["Does Hostlet run backend services or databases?", "Hostlet hosts static files only. Application scripts run in the visitor's browser. It does not provide user backend services or application databases."],
