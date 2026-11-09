@@ -4,6 +4,8 @@
 
 > 2026-11-09 更新：`hostlet-cli` 与 `hostlet-skill` 已发布到公共 npm registry，`latest` 标签均为 `0.2.0`；CLI 新增注册、登录和 API Key 管理，Skill 安装器自带隔离 CLI。官网新增可复制的安装指令与 AI 助手提示词。最新完整回归为 386 项，其中 384 项通过、2 项按 Windows 平台条件跳过、0 失败；`npm run build` 通过（48 个模块）。下文涉及旧版本和“尚未发布”的记录保留为发布前的核验证据；发布后的安装与版本验证见仓库根目录 `README.md` 和 npm 包页面。
 
+> 2026-11-09 生产发布：`96f2341` 已部署到 `/opt/hostlet/releases/20261109-96f234125a9f`，`/opt/hostlet/app` 原子切换并重启服务。服务器隔离目录执行 `npm test` 共 386 项、386 通过、0 跳过；切换后健康检查、公网中英文安装提示词、双语 HTML、公开目录、宣传应用和 13 项宿主机冒烟均通过。按官网提示词在 Windows Codex 默认技能目录执行 `npx --yes hostlet-skill@latest install` 成功，随附 `hostlet.cmd --version` 输出 `0.2.0`；新会话加载技能与真实浏览器交互仍待确认。
+
 ## 本次验证
 
 - Windows、Node 22.21.1、npm 10.9.4：`npm test` 共 373 项，371 通过、0 失败、2 跳过。跳过项为“Windows 无符号链接能力”和“POSIX 文件权限不可用”，本次不将其计为通过。

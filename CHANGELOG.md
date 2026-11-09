@@ -12,6 +12,7 @@
 - 官网新增中英文 FAQ、JSON-LD 结构化数据、`robots.txt`、`sitemap.xml`、无 JavaScript 可读内容和 GitHub 入口。
 - 官网新增中英文 Skill 安装指令与 AI 助手提示词的一键复制区，安装步骤仅到 Skill 就绪，不会提前要求账号授权或发布。
 - `hostlet-cli@0.2.0` 与 `hostlet-skill@0.2.0` 已发布到公共 npm registry，并完成 Windows 干净安装与技能自带 CLI 验证。
+- 当前提交 `96f2341` 已发布到 `hostlet.cn` 宿主机，生产发布目录为 `/opt/hostlet/releases/20261109-96f234125a9f`；服务器隔离目录 386 项测试全通过，切换后健康检查、公网中英文安装区块和 13 项部署冒烟通过。
 - `hostlet-cli` 发布到公共 npm registry，可直接 `npm install -g hostlet-cli`。
 - `hostlet-skill` 发布到公共 npm registry，提供 `hostlet-skill install` 安装器，将发布 Skill 写入 Codex skills 目录。
 - 公开官网首页，展示公开应用、搜索、最近更新/最多访问排序和累计访问数。
