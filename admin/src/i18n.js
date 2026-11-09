@@ -4,6 +4,7 @@ import { normalizeLanguage, translate } from "../../shared/locales.js";
 const KEY = "html-hosting-language";
 let requestedLanguage = null;
 try {
+  if (window.location.pathname === "/") requestedLanguage = "zh-CN";
   const requested = new URLSearchParams(window.location.search).get("lang");
   if (requested && /^(zh|en)(-|$)/i.test(requested)) requestedLanguage = normalizeLanguage(requested);
 } catch { /* Query strings are unavailable outside a browser. */ }

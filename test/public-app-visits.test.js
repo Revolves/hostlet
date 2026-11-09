@@ -10,6 +10,7 @@ import { ServerResponse } from "node:http";
 import { loadConfig } from "../server/config.js";
 import { openDatabase } from "../server/database.js";
 import { createApps } from "../server/app.js";
+import { publicCopy } from "../shared/public-site.js";
 
 const PASSWORD = "correct horse battery staple";
 const SECRET = "0123456789abcdef0123456789abcdef";
@@ -284,7 +285,7 @@ test("public homepage serves language-specific SEO metadata", async (t) => {
   assert.match(zhResponse.headers.get("cache-control"), /no-cache/);
   const zh = await zhResponse.text();
   assert.match(zh, /<html lang="zh-CN">/);
-  assert.match(zh, /<title>Hostlet · 让每个作品都有独立的地址<\/title>/);
+  assert.ok(zh.includes(`<title>${publicCopy["zh-CN"].meta.title}</title>`));
   assert.match(zh, /<meta property="og:locale" content="zh_CN" \/>/);
   assert.match(zh, new RegExp(`<link rel="canonical" href="${origin}/" />`));
   assert.match(zh, new RegExp(`<meta property="og:image" content="${origin}/social-card.png" />`));
@@ -293,7 +294,7 @@ test("public homepage serves language-specific SEO metadata", async (t) => {
   assert.equal(enResponse.headers.get("content-language"), "en");
   const en = await enResponse.text();
   assert.match(en, /<html lang="en">/);
-  assert.match(en, /<title>Hostlet · Every project deserves its own address<\/title>/);
+  assert.ok(en.includes(`<title>${publicCopy.en.meta.title.replaceAll("&", "&amp;")}</title>`));
   assert.match(en, /<meta property="og:locale" content="en_US" \/>/);
   assert.match(en, new RegExp(`<link rel="canonical" href="${origin}/\\?lang=en" />`));
   assert.match(en, /<meta name="twitter:card" content="summary_large_image" \/>/);

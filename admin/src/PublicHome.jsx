@@ -14,6 +14,7 @@ import {
 } from "../../shared/public-site.js";
 import { hostingConfig } from "./hosting-address.js";
 import "./public-home.css";
+import { publicFaq } from "../../shared/public-faq.js";
 
 const toneNames = ["editorial", "studio", "archive", "signal"];
 
@@ -237,6 +238,16 @@ export default function PublicHome() {
     setMeta('meta[name="twitter:image:alt"]', meta.ogImageAlt);
     setLink("canonical", meta.canonical);
     for (const item of meta.alternates) setAlternate(item.hreflang, item.href);
+    const structured = document.head.querySelector('script[type="application/ld+json"]');
+    if (structured) {
+      try {
+        const data = JSON.parse(structured.textContent);
+        Object.assign(data, { url: meta.canonical, description: meta.description, inLanguage: meta.htmlLang });
+        structured.textContent = JSON.stringify(data);
+      } catch {
+        // Leave unrelated or malformed structured data untouched.
+      }
+    }
     return () => setDocumentTitle(null);
   }, [locale]);
 
@@ -325,12 +336,16 @@ export default function PublicHome() {
     <div className="public-site">
       <a className="public-skip" href="#main">{copy.a11y.skip}</a>
       <header className="public-nav">
-        <a className="public-nav__brand" href="/" aria-label="Hostlet"><Mark /><span>{copy.brand}</span></a>
+        <div className="public-nav__identity">
+          <a className="public-nav__brand" href="/" aria-label="Hostlet"><Mark /><span>{copy.brand}</span></a>
+          <span className="public-nav__developer">by Revolves</span>
+        </div>
         <div className="public-nav__actions">
+          {github ? <a className="public-nav__github" href={github.url} target="_blank" rel="noopener noreferrer" aria-label={`${copy.source.action}: ${github.label}`} title={copy.source.action}><GitHubMark /></a> : null}
           <div className="public-language" role="group" aria-label={copy.a11y.language}>
-            <button type="button" lang="zh-CN" aria-pressed={locale === "zh-CN"} onClick={() => changeLocale("zh-CN")}>中文</button>
+            <a lang="zh-CN" href="/?lang=zh-CN" aria-current={locale === "zh-CN" ? "page" : undefined}>中文</a>
             <span aria-hidden="true">/</span>
-            <button type="button" lang="en" aria-pressed={locale === "en"} onClick={() => changeLocale("en")}>EN</button>
+            <a lang="en" href="/?lang=en" aria-current={locale === "en" ? "page" : undefined}>EN</a>
           </div>
           <a className="public-nav__cta" href="/workspace">{copy.nav.start}<span aria-hidden="true">↗</span></a>
         </div>
@@ -345,8 +360,8 @@ export default function PublicHome() {
             <h1><span>{copy.hero.lineOne}</span>{" "}<span>{copy.hero.lineTwo}</span></h1>
             <p className="public-hero__description">{copy.hero.description}</p>
             <div className="public-hero__actions">
-              <a className="public-button public-button--primary" href="#applications">{copy.hero.primary}<span aria-hidden="true">↓</span></a>
-              <a className="public-button public-button--quiet" href="/workspace">{copy.hero.secondary}<span aria-hidden="true">↗</span></a>
+              <a className="public-button public-button--primary" href="#skill">{copy.hero.primary}<span aria-hidden="true">↓</span></a>
+              <a className="public-button public-button--quiet" href="#applications">{copy.hero.secondary}<span aria-hidden="true">↗</span></a>
             </div>
             <p className="public-hero__proof">{copy.hero.proof}</p>
           </div>
@@ -373,6 +388,23 @@ export default function PublicHome() {
               );
             })}
           </p>
+        </section>
+
+        <section className="public-workflow" id="skill">
+          <div className="public-workflow__head" data-reveal>
+            <p className="public-eyebrow"><span />{copy.workflow.eyebrow}</p>
+            <h2>{copy.workflow.title}</h2>
+          </div>
+          <ol className="public-steps">
+            {copy.workflow.steps.map(([index, title, description], stepIndex) => (
+              <li key={index} data-reveal style={{ "--delay": `${stepIndex * 100}ms` }}>
+                <span className="public-steps__index">{index}</span>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </li>
+            ))}
+          </ol>
+          <a className="public-button public-button--primary" href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish" target="_blank" rel="noopener noreferrer">{copy.cta.action}<span aria-hidden="true">↗</span></a>
         </section>
 
         <section className="public-showcase" id="applications">
@@ -430,21 +462,6 @@ export default function PublicHome() {
           )}
         </section>
 
-        <section className="public-workflow" id="workflow">
-          <div className="public-workflow__head" data-reveal>
-            <p className="public-eyebrow"><span />{copy.workflow.eyebrow}</p>
-            <h2>{copy.workflow.title}</h2>
-          </div>
-          <ol className="public-steps">
-            {copy.workflow.steps.map(([index, title, description], stepIndex) => (
-              <li key={index} data-reveal style={{ "--delay": `${stepIndex * 100}ms` }}>
-                <span className="public-steps__index">{index}</span>
-                <h3>{title}</h3>
-                <p>{description}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
 
         {github ? (
           <section className="public-source" id="source" aria-labelledby="source-title" data-reveal>
@@ -464,12 +481,16 @@ export default function PublicHome() {
           </section>
         ) : null}
 
+        <section className="public-faq" aria-labelledby="faq-title">
+          <h2 id="faq-title">{publicFaq[locale].title}</h2>
+          {publicFaq[locale].items.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
+        </section>
         <section className="public-cta" data-reveal>
           <div>
             <h2>{copy.cta.title}</h2>
             <p>{copy.cta.description}</p>
           </div>
-          <a className="public-button public-button--primary" href="/workspace">{copy.cta.action}<span aria-hidden="true">↗</span></a>
+          <a className="public-button public-button--primary" href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish" target="_blank" rel="noopener noreferrer">{copy.cta.action}<span aria-hidden="true">↗</span></a>
         </section>
       </main>
 

@@ -50,6 +50,7 @@ import { createSecurityLog, createSecurityRequestLogger } from "./security-log.j
 import { createOperationsStatus } from "./operations-status.js";
 import { createPublicDirectoryService } from "./public-directory.js";
 import { publicIndexLanguage, readPublicIndexTemplate, renderPublicIndexHtml } from "./public-index.js";
+import { publicMeta } from "../shared/public-site.js";
 import { DEFAULT_QUOTAS } from "./quotas.js";
 import { FileSiteStorage, sourceTypeFromFilename } from "./storage.js";
 import { signGrant } from "./tokens.js";
@@ -860,6 +861,14 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   admin.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
 
   if (fs.existsSync(config.adminDistDir)) {
+    admin.get("/robots.txt", (_req, res) => {
+      res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /console\nDisallow: /platform-admin\nDisallow: /workspace\nDisallow: /account\nDisallow: /share/\nSitemap: ${config.adminOrigin}/sitemap.xml\n`);
+    });
+    admin.get("/sitemap.xml", (_req, res) => {
+      const urls = publicMeta({ origin: config.adminOrigin }).alternates;
+      const escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${urls.slice(0, 2).map((url) => `<url><loc>${escape(url.href)}</loc>${urls.map((alt) => `<xhtml:link rel="alternate" hreflang="${alt.hreflang}" href="${escape(alt.href)}"/>`).join("")}</url>`).join("")}</urlset>`);
+    });
     const adminIndexFile = path.join(config.adminDistDir, "index.html");
     let adminIndexTemplate;
     admin.get("/", (req, res) => {
@@ -874,6 +883,7 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
     });
     admin.use(express.static(config.adminDistDir, { index: false, maxAge: "1h" }));
     admin.get("/{*splat}", (_req, res) => {
+      res.set("X-Robots-Tag", "noindex, follow");
       res.sendFile(path.join(config.adminDistDir, "index.html"));
     });
   }

@@ -1,5 +1,6 @@
 import fs from "node:fs";
-import { normalizePublicLocale, publicMeta } from "../shared/public-site.js";
+import { normalizePublicLocale, publicMeta, publicCopy } from "../shared/public-site.js";
+import { publicFaq } from "../shared/public-faq.js";
 
 const metaStart = "<!-- HOSTLET_META_START -->";
 const metaEnd = "<!-- HOSTLET_META_END -->";
@@ -17,14 +18,27 @@ export function publicIndexLanguage(value) {
 
 export function renderPublicIndexHtml(template, { origin = "", lang = "zh-CN" } = {}) {
   const locale = publicIndexLanguage(lang);
+  const copy = publicCopy[locale];
   const meta = publicMeta({ locale, origin });
   const alternateLocale = locale === "en" ? "zh_CN" : "en_US";
+  const structuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Hostlet",
+    url: meta.canonical,
+    description: meta.description,
+    inLanguage: meta.htmlLang,
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Web",
+    creator: { "@type": "Person", name: "Revolves", url: "https://github.com/Revolves" },
+    license: "https://opensource.org/license/mit",
+  }).replace(/</g, "\\u003c");
   const tags = [
     `<title>${escapeHtml(meta.title)}</title>`,
     `<meta name="description" content="${escapeHtml(meta.description)}" />`,
     `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`,
     ...meta.alternates.map((item) => `<link rel="alternate" hreflang="${escapeHtml(item.hreflang)}" href="${escapeHtml(item.href)}" />`),
-    `<meta name="robots" content="index, follow" />`,
+    `<meta name="robots" content="index, follow, max-image-preview:large" />`,
     `<meta property="og:site_name" content="Hostlet" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:title" content="${escapeHtml(meta.title)}" />`,
@@ -42,6 +56,7 @@ export function renderPublicIndexHtml(template, { origin = "", lang = "zh-CN" } 
     `<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`,
     `<meta name="twitter:image" content="${escapeHtml(meta.ogImage)}" />`,
     `<meta name="twitter:image:alt" content="${escapeHtml(meta.ogImageAlt)}" />`,
+    `<script type="application/ld+json">${structuredData}</script>`,
   ];
   let html = String(template);
   const start = html.indexOf(metaStart);
@@ -49,6 +64,8 @@ export function renderPublicIndexHtml(template, { origin = "", lang = "zh-CN" } 
   if (start >= 0 && end > start) {
     html = `${html.slice(0, start + metaStart.length)}\n    ${tags.join("\n    ")}\n    ${html.slice(end)}`;
   }
+  const content = `<header><a href="/">Hostlet</a> · by Revolves <nav><a href="/?lang=zh-CN" lang="zh-CN">中文</a> / <a href="/?lang=en" lang="en">English</a></nav></header><main><h1>${escapeHtml(copy.hero.lineOne)} ${escapeHtml(copy.hero.lineTwo)}</h1><p>${escapeHtml(copy.hero.description)}</p><a href="/workspace">${escapeHtml(copy.nav.start)}</a><section id="skill"><h2>${escapeHtml(copy.workflow.title)}</h2><ol>${copy.workflow.steps.map(([, title, description]) => `<li><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></li>`).join("")}</ol><a href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish">${escapeHtml(copy.cta.action)}</a></section><section><h2>${escapeHtml(publicFaq[locale].title)}</h2>${publicFaq[locale].items.map(([q, a]) => `<details><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join("")}</section><a href="https://github.com/Revolves/hostlet">GitHub · Revolves/hostlet</a></main>`;
+  html = html.replace('<div id="root"></div>', `<div id="root">${content}</div>`).replace(/<noscript>[\s\S]*?<\/noscript>/, "");
   return html.replace(/<html\s+lang="[^"]*"/i, `<html lang="${meta.htmlLang}"`);
 }
 
