@@ -1,6 +1,6 @@
 {
   "name": "hostlet-skill",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent skill for publishing static applications to Hostlet through the Hostlet CLI.",
   "license": "MIT",
   "author": "Hostlet contributors",
@@ -19,6 +19,9 @@
     "agents/",
     "references/"
   ],
+  "dependencies": {
+    "hostlet-cli": "0.2.0"
+  },
   "keywords": [
     "hostlet",
     "agent-skill",

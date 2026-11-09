@@ -63,16 +63,30 @@ For development, install from this checkout or build a local tarball:
 ```sh
 npm install -g ./cli
 npm pack ./cli
-npm install -g ./hostlet-cli-0.1.0.tgz
+npm install -g ./hostlet-cli-0.2.0.tgz
 ```
 
 Running from source remains supported with `node cli/hostlet.js ...` (or `npm run pack:cli` to build the tarball).
 
-Create a 30-day API credential with read, publish, and share scopes, then set `HOSTLET_TOKEN` in the environment. `HOSTLET_URL` is optional and defaults to `https://hostlet.cn`; set it for a custom instance. The target instance must expose the account credential flow and `/api/cli`. Do not use the administrator password as a token, and do not commit the token or write it to logs.
+Register or sign in, create an API key, and publish without visiting the portal first:
+
+```sh
+hostlet register --username alice --password-stdin
+hostlet workspaces
+hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo"
+```
+
+The account password is read from standard input and must contain at least 12 characters. `register` and `login` save the account session and a 30-day API key with read, publish, and share scopes; later commands read the saved token automatically. `HOSTLET_URL` is optional and defaults to `https://hostlet.cn`; set it for a custom instance. `HOSTLET_TOKEN` remains supported for automation and overrides the saved token. The target instance must expose the account credential flow and `/api/cli`. Do not use the administrator password as a token, and do not commit the token or write it to logs.
 
 The official `hostlet.cn` deployment exposes username registration and account API credentials, so it can be used directly for CLI and Skill publishing. Username accounts cannot recover passwords by email yet; keep the password safe.
 
 ```sh
+hostlet register --username alice --password-stdin
+hostlet login --identifier alice --password-stdin
+hostlet whoami
+hostlet keys list
+hostlet keys create --key-name "CI publisher" --password-stdin
+hostlet keys revoke --id KEY_ID
 hostlet workspaces
 hostlet pages --workspace WORKSPACE_ID
 hostlet versions --workspace WORKSPACE_ID --page PAGE_ID
@@ -93,11 +107,10 @@ Publishing accepts HTML, ZIP, or a directory and creates a private application b
 The publishing skill is published on npm as [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill) and its source lives in [`skills/hostlet-publish/`](skills/hostlet-publish/).
 
 ```sh
-npm install -g hostlet-cli
 npx hostlet-skill install
 ```
 
-The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default; use `--target` for another skills directory. It reuses the CLI, defaults to the official `https://hostlet.cn` instance, and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation of the target workspace and file boundary, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
+The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default and bundles an isolated CLI at `bin/hostlet` (Windows: `bin/hostlet.cmd`), so no global CLI install is required. Use `--target` for another skills directory; `--skip-cli` is available only when a global `hostlet` already exists or the environment is offline. The skill defaults to the official `https://hostlet.cn` instance and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation before registering an account or creating a key, never accepts a password in command arguments, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
 
 ## Multiuser mode
 

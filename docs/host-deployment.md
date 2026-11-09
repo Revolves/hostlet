@@ -97,7 +97,7 @@ USERNAME_REGISTRATION_ENABLED=false
 - 用户名注册：设置 `MULTIUSER_ENABLED=true`、`REGISTRATION_ENABLED=true` 和 `USERNAME_REGISTRATION_ENABLED=true`，不需要 SMTP。用户名为 3 到 32 位小写字母、数字、下划线或短横线，注册成功后直接建立会话。
 - 两种方式可以同时开启。用户名账户无法通过邮件找回密码，界面和文档必须保留这一限制提示。
 
-登录账户后，可在账户页的 `API Key` 标签创建 30 天凭据。凭据包含 `read`、`publish` 和 `share` 权限，只在创建时显示一次，可随时撤销。CLI 和 Skill 通过 `HOSTLET_TOKEN` 读取凭据；官方实例默认使用 `https://hostlet.cn`，自建实例用 `HOSTLET_URL` 覆盖。不要把管理员密码、API Key 或完整环境文件写入仓库、截图和日志。
+登录账户后，可在账户页的 `API Key` 标签创建 30 天凭据；也可以直接运行 `hostlet register` 或 `hostlet login`，由 CLI 创建并保存凭据。凭据包含 `read`、`publish` 和 `share` 权限，只在创建时显示一次，可随时撤销。CLI 默认读取本地凭据文件，`HOSTLET_TOKEN` 仍可用于自动化并优先使用；官方实例默认使用 `https://hostlet.cn`，自建实例用 `HOSTLET_URL` 覆盖。`hostlet-skill` 安装器会自带隔离的 CLI，无需全局安装。不要把管理员密码、API Key、账户会话或完整环境文件写入仓库、截图和日志。
 
 用户发布应用还需要完整的托管地址。默认推荐使用独立的可注册域：
 
@@ -247,3 +247,14 @@ sudo systemctl start hostlet
 恢复时保持数据目录绝对路径不变，并同时保留 `/etc/hostlet/hostlet.env`。升级时先备份，再替换源码、执行 `npm ci`、`npm test`、`npm run build`、`npm prune --omit=dev`，最后重启服务并重跑冒烟检查。
 
 应用会把脱敏安全事件写入 `/var/lib/hostlet/security-logs/`。该目录也须纳入磁盘容量、备份与访问权限管理。
+
+## 2026-11-09 双语 SEO / GEO 更新
+
+- 发布目录：`/opt/hostlet/releases/20261109-seo-bilingual`；上一版本为 `/opt/hostlet/releases/20261109T142000Z`，通过 `/opt/hostlet/app` 符号链接切换。
+- 官网提供中文 `/` 与英文 `/?lang=en`，输出对应语言的标题、描述、canonical、hreflang、社交分享信息及 WebApplication JSON-LD。正文介绍、发布流程和常见问题在原始 HTML 中可直接读取，无须执行 JavaScript；FAQ 与浏览器界面共用双语内容。
+- 增加 `/robots.txt` 与双语 `/sitemap.xml`，工作台等管理路由返回 `X-Robots-Tag: noindex, follow`。顶部署名为 Revolves，并增加仓库图标入口。
+- 本地及服务器 11 项相关测试通过；生产构建通过；部署后 13 项冒烟检查通过。公网确认双语 HTML、结构化数据、robots、sitemap 和工作台 noindex 响应正常。
+- 搜索排名、收录与 AI 引用由各平台决定。本次未操作 Search Console 或第三方站长账号。
+- 优化依据：[Google AI features and your website](https://developers.google.com/search/docs/appearance/ai-features)，以可抓取正文、准确内容和与页面一致的结构化信息为基础。
+- 浏览器复验：英文首屏正常展示 Revolves 署名、GitHub 入口和英文 FAQ；点击中文链接后，标题、正文和 FAQ 切换为中文。
+- 额外全量测试运行在第 160 项后未继续输出，已停止等待；不将其记为全量通过。本次完成状态以相关 11 项测试、构建、公网响应及 13 项生产冒烟为依据。

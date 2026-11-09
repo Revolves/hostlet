@@ -30,6 +30,7 @@ test("skill manifest is a standalone public npm package", async () => {
   assert.deepEqual(pkg.bin, { "hostlet-skill": "install.js" });
   assert.equal(pkg.repository.directory, "skills/hostlet-publish");
   assert.equal(pkg.publishConfig.access, "public");
+  assert.deepEqual(pkg.dependencies, { "hostlet-cli": pkg.version });
   for (const file of ["install.js", "SKILL.md", "README.md", "LICENSE", "agents/openai.yaml", "references/cli.md"]) {
     await fs.access(path.join(dir, file));
   }
@@ -64,7 +65,7 @@ test("npm pack includes only the skill runtime and package docs", async (t) => {
   ]);
 });
 
-test("installer copies the skill and reports its version", async (t) => {
+test("installer copies the skill with an isolated CLI runtime", async (t) => {
   const target = await fs.mkdtemp(path.join(os.tmpdir(), "hostlet-skill-install-"));
   t.after(() => fs.rm(target, { recursive: true, force: true }));
   const script = path.join(process.cwd(), "skills", "hostlet-publish", "install.js");
@@ -72,12 +73,42 @@ test("installer copies the skill and reports its version", async (t) => {
   const installed = await run(process.execPath, [script, "install", "--target", target]);
   assert.equal(installed.code, 0, installed.stderr);
   assert.match(installed.stdout, /Installed Hostlet Publish skill/);
+  assert.match(installed.stdout, /Bundled Hostlet CLI/);
+  assert.match(installed.stdout, /no global npm install/);
   assert.match(await fs.readFile(path.join(target, "SKILL.md"), "utf8"), /name: hostlet-publish/);
   await fs.access(path.join(target, "agents", "openai.yaml"));
   await fs.access(path.join(target, "references", "cli.md"));
+  await fs.access(path.join(target, "bin", "hostlet"));
+  await fs.access(path.join(target, "bin", "hostlet.cmd"));
+  await fs.access(path.join(target, "bin", "hostlet.ps1"));
+  const cli = path.join(target, "runtime", "node_modules", "hostlet-cli", "hostlet.js");
+  await fs.access(cli);
+  await fs.access(path.join(target, "runtime", "node_modules", "jszip", "package.json"));
+  const runtimeVersion = await run(process.execPath, [cli, "--version"]);
+  assert.equal(runtimeVersion.code, 0, runtimeVersion.stderr);
+  assert.match(runtimeVersion.stdout, /^hostlet-cli \d+\.\d+\.\d+/);
 
   const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), "skills", "hostlet-publish", "package.json"), "utf8"));
   const version = await run(process.execPath, [script, "--version"]);
   assert.equal(version.code, 0, version.stderr);
   assert.equal(version.stdout.trim(), pkg.version);
+});
+
+test("installer supports --skip-cli and documents bundled runtime options", async (t) => {
+  const target = await fs.mkdtemp(path.join(os.tmpdir(), "hostlet-skill-skip-"));
+  t.after(() => fs.rm(target, { recursive: true, force: true }));
+  const script = path.join(process.cwd(), "skills", "hostlet-publish", "install.js");
+
+  const help = await run(process.execPath, [script, "--help"]);
+  assert.equal(help.code, 0, help.stderr);
+  for (const text of ["--target", "--cli-version", "--skip-cli", "<target>/runtime", "<target>/bin"]) {
+    assert.ok(help.stdout.includes(text), `installer help should mention ${text}`);
+  }
+
+  const installed = await run(process.execPath, [script, "install", "--target", target, "--skip-cli"]);
+  assert.equal(installed.code, 0, installed.stderr);
+  assert.match(installed.stdout, /Bundled CLI skipped/);
+  await fs.access(path.join(target, "SKILL.md"));
+  await assert.rejects(fs.access(path.join(target, "runtime")));
+  await assert.rejects(fs.access(path.join(target, "bin", "hostlet")));
 });

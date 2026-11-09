@@ -7,7 +7,7 @@ import {spawn} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 
 const token='T'.repeat(43);
-const commands=['workspaces','pages','versions','publish','publish-status','rollback','shares','share','revoke-share'];
+const commands=['register','login','logout','whoami','keys','workspaces','pages','versions','publish','publish-status','rollback','shares','share','revoke-share'];
 
 async function fixture(t) {
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'hostlet-cli-help-test-'));
@@ -16,7 +16,7 @@ async function fixture(t) {
   await fs.writeFile(mock,`globalThis.fetch=()=>{process.stderr.write('FETCH_CALLED\\n');throw new Error('network disabled');}`);
   function run(args,{env={}}={}) {
     const childEnv={...process.env};
-    for (const key of ['HOSTLET_URL','HOSTLET_TOKEN','HOSTLET_SHARE_PASSWORD']) delete childEnv[key];
+    for (const key of ['HOSTLET_URL','HOSTLET_TOKEN','HOSTLET_CONFIG','HOSTLET_SHARE_PASSWORD']) delete childEnv[key];
     Object.assign(childEnv,env);
     return new Promise(resolve=>{
       const child=spawn(process.execPath,['--no-warnings','--import',pathToFileURL(mock).href,'cli/hostlet.js',...args],{
@@ -37,7 +37,7 @@ test('help and version work without credentials and never touch the network',asy
     const result=await run(args);
     assert.equal(result.code,0,result.stderr);
     for (const text of [
-      'Usage:','hostlet help <command>','HOSTLET_URL','HOSTLET_TOKEN','HOSTLET_SHARE_PASSWORD',
+      'Usage:','hostlet help <command>','HOSTLET_URL','HOSTLET_TOKEN','HOSTLET_CONFIG','HOSTLET_SHARE_PASSWORD',
       'Defaults to https://hostlet.cn','Never pass it on the command line','Remote instances must use HTTPS'
     ]) assert.ok(result.stdout.includes(text),`${args.join(' ')} should mention ${text}`);
     for (const command of commands) assert.ok(result.stdout.includes(`  ${command}`),`help should list ${command}`);
@@ -69,6 +69,26 @@ test('publish help documents replacement, entry and recovery options',async t=>{
     assert.ok(result.stdout.includes('private'));
     assert.ok(result.stdout.includes('publish-status'));
   }
+});
+
+test('account help documents zero-to-publish onboarding and key management',async t=>{
+  const {run}=await fixture(t);
+  const register=await run(['help','register']);
+  assert.equal(register.code,0,register.stderr);
+  for (const text of ['--username','--password-stdin','--key-name','--scopes','--expires','--no-key','--json']) {
+    assert.ok(register.stdout.includes(text),`register help should document ${text}`);
+  }
+  assert.match(register.stdout,/at least 12 characters/);
+  assert.match(register.stdout,/shown once/);
+
+  const login=await run(['login','--help']);
+  assert.equal(login.code,0,login.stderr);
+  for (const text of ['--identifier','--password-stdin','--key-name']) assert.ok(login.stdout.includes(text));
+
+  const keys=await run(['keys','--help']);
+  assert.equal(keys.code,0,keys.stderr);
+  for (const text of ['list','create','revoke','--id','--password-stdin']) assert.ok(keys.stdout.includes(text));
+  assert.match(keys.stdout,/saved account session/);
 });
 
 test('version matches the standalone package manifest',async t=>{

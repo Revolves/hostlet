@@ -6,6 +6,11 @@
 
 ### Added
 
+- `hostlet-cli` 新增 `register`、`login`、`logout`、`whoami` 和 `keys list/create/revoke`，可从零完成注册、创建 API Key 和发布。
+- CLI 将账户会话和 API Key 保存到用户凭据文件（`HOSTLET_CONFIG` 可覆盖），后续命令自动读取；`HOSTLET_TOKEN` 继续兼容并优先使用。
+- `hostlet-skill` 安装器自带隔离 CLI 运行时和 `bin/hostlet` 包装脚本，无需全局安装 `hostlet-cli` 即可使用；新增 `--cli-version` 和 `--skip-cli`。
+- 官网新增中英文 FAQ、JSON-LD 结构化数据、`robots.txt`、`sitemap.xml`、无 JavaScript 可读内容和 GitHub 入口。
+- `hostlet-cli@0.2.0` 与 `hostlet-skill@0.2.0` 已发布到公共 npm registry，并完成 Windows 干净安装与技能自带 CLI 验证。
 - `hostlet-cli` 发布到公共 npm registry，可直接 `npm install -g hostlet-cli`。
 - `hostlet-skill` 发布到公共 npm registry，提供 `hostlet-skill install` 安装器，将发布 Skill 写入 Codex skills 目录。
 - 公开官网首页，展示公开应用、搜索、最近更新/最多访问排序和累计访问数。

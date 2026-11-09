@@ -46,16 +46,30 @@ hostlet --help
 ```sh
 npm install -g ./cli
 npm pack ./cli
-npm install -g ./hostlet-cli-0.1.0.tgz
+npm install -g ./hostlet-cli-0.2.0.tgz
 ```
 
 仍支持从源码运行 `node cli/hostlet.js ...`，也可用 `npm run pack:cli` 生成 tarball。
 
-登录启用了账户与 API Key 流程的实例后，在账户页的“API Key”标签创建 30 天的读取、发布和分享凭据，复制一次性显示的值。此前只含读取和发布权限的旧凭据不能管理分享，需要重新创建。`HOSTLET_TOKEN` 通过安全的环境变量设置；`HOSTLET_URL` 可省略，默认 `https://hostlet.cn`，自建实例再显式覆盖。目标实例必须提供账户凭据流程和 `/api/cli`，不能把管理员密码当作令牌使用。不要把凭据提交到仓库或写入日志。
+现在可以不解锁账户页，直接从 CLI 完成注册、建 Key 和发布：
+
+```sh
+hostlet register --username alice --password-stdin
+hostlet workspaces
+hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo"
+```
+
+账户密码从标准输入读取，至少 12 个字符。`register` 和 `login` 会保存账户会话，并默认创建 30 天、包含读取、发布和分享权限的 API Key；后续命令自动使用已保存的令牌。`HOSTLET_URL` 可省略，默认 `https://hostlet.cn`，自建实例再显式覆盖。`HOSTLET_TOKEN` 仍可用于自动化，并优先于本地保存的令牌。目标实例必须提供账户凭据流程和 `/api/cli`，不能把管理员密码当作令牌使用。不要把凭据提交到仓库或写入日志。
 
 官方 `hostlet.cn` 已开放用户名注册和账户 API Key，可直接用于 CLI 与 Skill 发布；用户名账户暂不支持邮件找回密码，请妥善保存密码。
 
 ```sh
+hostlet register --username alice --password-stdin
+hostlet login --identifier alice --password-stdin
+hostlet whoami
+hostlet keys list
+hostlet keys create --key-name "CI publisher" --password-stdin
+hostlet keys revoke --id KEY_ID
 hostlet workspaces
 hostlet pages --workspace WORKSPACE_ID
 hostlet versions --workspace WORKSPACE_ID --page PAGE_ID
@@ -81,7 +95,7 @@ CLI 在发送前将请求 ID 写入标准错误（使用 `--json` 时也如此�
 
 发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。CLI 已发布到公共 npm registry，也仍可从源码或本地 tarball 安装；尚未在 Linux 和 macOS 实机验证全部命令。接口的限流为单进程限制，公开部署仍需入口限流。
 
-Agent Skill 已发布到 npm，包名为 [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill)，源码位于 [`skills/hostlet-publish/`](skills/hostlet-publish/)。安装 CLI 后执行 `npx hostlet-skill install`；安装器默认把 Skill 写入 `$CODEX_HOME/skills/hostlet-publish`，可用 `--target` 指定其他 skills 目录。Skill 复用 CLI，默认官方 `https://hostlet.cn`，通过 `HOSTLET_URL` 切换自建实例。使用时先确认目标实例、工作空间和待发布目录；检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回工作台地址、应用 ID 和版本；如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
+Agent Skill 已发布到 npm，包名为 [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill)，源码位于 [`skills/hostlet-publish/`](skills/hostlet-publish/)。执行 `npx hostlet-skill install` 即可；安装器默认把 Skill 写入 `$CODEX_HOME/skills/hostlet-publish`，并同时安装隔离的 CLI 到 `bin/hostlet`（Windows 为 `bin/hostlet.cmd`），无需再全局安装 CLI。可用 `--target` 指定其他 skills 目录；只有在已全局安装 `hostlet` 或离线环境时才使用 `--skip-cli`。Skill 默认官方 `https://hostlet.cn`，通过 `HOSTLET_URL` 切换自建实例。它支持注册、登录、创建 API Key 和发布，但必须先获得用户确认；密码只能通过标准输入传递。使用时先确认目标实例、工作空间和待发布目录，检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回工作台地址、应用 ID 和版本；如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
 
 ## 参与贡献
 

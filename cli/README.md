@@ -38,8 +38,31 @@ Running from a packed tarball remains supported:
 
 ```sh
 npm pack ./cli
-npm install -g ./hostlet-cli-0.1.0.tgz
+npm install -g ./hostlet-cli-0.2.0.tgz
 ```
+
+## Zero to publish
+
+Register, create an API key, and publish without visiting the portal first:
+
+```sh
+# The password is read from standard input and never appears in argv.
+hostlet register --username alice --password-stdin
+hostlet workspaces
+hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo"
+```
+
+`register` and `login` save the account session and a 30-day API key with `read`, `publish`, and `share` scopes in the Hostlet credentials file. Later commands read the saved token automatically. Use `--no-key` to save only the session.
+
+To use an existing account:
+
+```sh
+hostlet login --identifier alice --password-stdin
+hostlet whoami
+hostlet keys list
+```
+
+The account password must contain at least 12 characters. Supply it through standard input; there is no password command-line option.
 
 ## Source and issues
 
@@ -50,15 +73,16 @@ npm install -g ./hostlet-cli-0.1.0.tgz
 
 ## Configuration
 
-Create a 30-day API credential in the Hostlet account portal with the `read`, `publish`, and `share` scopes. Then set:
+Use `hostlet register` or `hostlet login` to create and save an API credential. You can also create one in the Hostlet account portal.
 
 | Variable | Required | Description |
 | --- | --- | --- |
 | `HOSTLET_URL` | No | Management origin. Defaults to `https://hostlet.cn`; set it for a custom instance. |
-| `HOSTLET_TOKEN` | Yes | 43-character API credential. Never pass it as a command-line argument. |
+| `HOSTLET_TOKEN` | No | Optional 43-character API credential. Overrides the saved token. Never pass it as a command-line argument. |
+| `HOSTLET_CONFIG` | No | Optional credentials file path. Defaults to `%APPDATA%\hostlet\credentials.json` on Windows and `$XDG_CONFIG_HOME/hostlet/credentials.json` (or `~/.config/hostlet/credentials.json`) elsewhere. |
 | `HOSTLET_SHARE_PASSWORD` | No | Share password. Prefer `--password-stdin` to keep it out of the environment and shell history. |
 
-PowerShell:
+PowerShell with an explicit token:
 
 ```powershell
 $env:HOSTLET_TOKEN = '...'
@@ -73,12 +97,17 @@ $env:HOSTLET_TOKEN = '...'
 hostlet workspaces
 ```
 
-Only HTTPS is accepted for remote instances. HTTP is allowed only for `localhost`, `127.0.0.1`, and `[::1]` loopback testing. The CLI does not read a token from a file or prompt for one. The target instance must expose the account API credential flow and `/api/cli`; using an administrator password as `HOSTLET_TOKEN` is not supported.
+Only HTTPS is accepted for remote instances. HTTP is allowed only for `localhost`, `127.0.0.1`, and `[::1]` loopback testing. `HOSTLET_TOKEN` takes precedence over the saved credentials file. The target instance must expose the account API credential flow and `/api/cli`; using an administrator password as `HOSTLET_TOKEN` is not supported.
 
 ## Commands
 
 | Command | Purpose | Credential scope |
 | --- | --- | --- |
+| `register` | Create a username account and save an API credential. | None |
+| `login` | Sign in and save an API credential. | None |
+| `logout` | Remove the saved credential for an instance. | None |
+| `whoami` | Show the saved account. | Account session |
+| `keys` | List, create, or revoke API keys. | Account session |
 | `workspaces` | List workspaces available to the credential. | `read` |
 | `pages` | List applications in a workspace. | `read` |
 | `versions` | List retained releases of an application. | `read` |
@@ -139,6 +168,22 @@ hostlet revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID
 
 After a network error or 5xx response during `share`, run `shares` before retrying. Do not paste share links or credentials into issue reports.
 
+## Account and API keys
+
+```sh
+hostlet register --username alice --password-stdin
+hostlet login --identifier alice --password-stdin
+hostlet whoami
+hostlet keys list
+hostlet keys create --key-name "CI publisher" --password-stdin
+hostlet keys revoke --id KEY_ID
+hostlet logout
+```
+
+`keys create` asks for the account password again because the server re-authenticates credential creation. The new token is shown once and saved locally. `keys list` and `keys revoke` use the saved account session.
+
+`register` and `login` accept `--key-name`, `--scopes`, `--expires`, and `--no-key`. Scopes are a comma-separated subset of `read,publish,share`; the default expiry is 30 days and the maximum is 365 days.
+
 ## Output and exit codes
 
 With `--json`, successful results are written to standard output as a single JSON value. Progress, the publication request ID, and recovery guidance are written to standard error. Errors are written to standard error, are redacted when they contain the current token, and exit with code `1`. Help, version, and successful commands exit with code `0`.
@@ -146,6 +191,7 @@ With `--json`, successful results are written to standard output as a single JSO
 ## Security
 
 - Keep `HOSTLET_TOKEN` out of command lines, shell history, logs, and source control.
+- Keep the credentials file private. It contains an account session cookie and API token.
 - Use the narrowest credential scope that the task needs.
 - Treat share links as bearer credentials. Revoke a link if it may have leaked.
 - Hosted applications run in visitors' browsers, so never upload private keys or secrets.

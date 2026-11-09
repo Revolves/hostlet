@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import {createHash, randomBytes} from 'node:crypto';
 import {createRequire} from 'node:module';
@@ -8,6 +9,69 @@ import JSZip from 'jszip';
 const {version}=createRequire(import.meta.url)('./package.json');
 const DEFAULT_HOSTLET_URL='https://hostlet.cn';
 const commands=new Map([
+  ['register',{
+    summary:'Create a username account and save an API credential.',
+    usage:'hostlet register --username <name> --password-stdin [options]',
+    options:[
+      ['--username <name>','Account username: 3-32 lowercase letters, digits, "_" or "-".'],
+      ['--password-stdin','Read the account password from standard input.'],
+      ['--key-name <name>','API key label. Defaults to "CLI <hostname>".'],
+      ['--scopes <list>','Comma-separated scopes. Defaults to read,publish,share.'],
+      ['--expires <iso>','API key expiry. Defaults to 30 days; maximum 365 days.'],
+      ['--no-key','Create the account and save a session without creating an API key.'],
+      ['--json','Print machine-readable JSON, including the one-time token.']
+    ],
+    notes:[
+      'Requires an instance with username registration enabled.',
+      'The password must contain at least 12 characters. It is never written to disk.',
+      'The API token is shown once and saved to the Hostlet credentials file for later commands.'
+    ]
+  }],
+  ['login',{
+    summary:'Sign in and save an API credential.',
+    usage:'hostlet login --identifier <username|email> --password-stdin [options]',
+    options:[
+      ['--identifier <value>','Username or email address.'],
+      ['--password-stdin','Read the account password from standard input.'],
+      ['--key-name <name>','API key label. Defaults to "CLI <hostname>".'],
+      ['--scopes <list>','Comma-separated scopes. Defaults to read,publish,share.'],
+      ['--expires <iso>','API key expiry. Defaults to 30 days; maximum 365 days.'],
+      ['--no-key','Save the account session without creating a new API key.'],
+      ['--json','Print machine-readable JSON, including the one-time token.']
+    ],
+    notes:[
+      'Email accounts must be verified before login. Username accounts are ready immediately.',
+      'Creating an API key requires the account password again; use --password-stdin.'
+    ]
+  }],
+  ['logout',{
+    summary:'Remove the saved credential for an instance.',
+    usage:'hostlet logout [--json]',
+    options:[['--json','Print machine-readable JSON.']],
+    notes:['Clears the local token and account session. Remote revocation of existing API keys must be done with "hostlet keys revoke".']
+  }],
+  ['whoami',{
+    summary:'Show the saved account for an instance.',
+    usage:'hostlet whoami [--json]',
+    options:[['--json','Print machine-readable JSON.']],
+    notes:['Requires an account session created by "hostlet login" or "hostlet register".']
+  }],
+  ['keys',{
+    summary:'List, create or revoke API keys.',
+    usage:'hostlet keys <list|create|revoke> [options]',
+    options:[
+      ['--id <id>','Credential ID for revoke.'],
+      ['--key-name <name>','API key label for create.'],
+      ['--scopes <list>','Comma-separated scopes for create. Defaults to read,publish,share.'],
+      ['--expires <iso>','API key expiry for create. Defaults to 30 days.'],
+      ['--password-stdin','Read the account password from standard input for create.'],
+      ['--json','Print machine-readable JSON. The created token is shown once.']
+    ],
+    notes:[
+      'list and revoke use the saved account session.',
+      'create requires the account password again because the server re-authenticates credential creation.'
+    ]
+  }],
   ['workspaces',{
     summary:'List workspaces available to the credential.',
     usage:'hostlet workspaces [--json]',
@@ -157,6 +221,7 @@ function generalHelp() {
     'Environment:',
     `  HOSTLET_URL             Optional management origin. Defaults to ${DEFAULT_HOSTLET_URL}`,
     '  HOSTLET_TOKEN           43-character API credential. Never pass it on the command line.',
+    '  HOSTLET_CONFIG          Optional credentials file. Defaults to the user config directory.',
     '  HOSTLET_SHARE_PASSWORD  Optional share password; prefer --password-stdin.',
     '',
     'Global options:',
@@ -177,7 +242,7 @@ function options(args,allowed) {
   for (let i=0;i<args.length;i++) {
     const key=args[i];
     if (!allowed.includes(key) || Object.hasOwn(result,key)) throw usageError();
-    if (key==='--json' || key==='--password-stdin') result[key]=true;
+    if (key==='--json' || key==='--password-stdin' || key==='--no-key') result[key]=true;
     else { if (!args[i+1] || args[i+1].startsWith('--')) throw usageError(); result[key]=args[++i]; }
   }
   return result;
@@ -238,6 +303,168 @@ function parseExpiry(value) {
   const at=Date.parse(value);
   if (!Number.isSafeInteger(at) || at<=Date.now()) throw new Error('--expires must be a future ISO-8601 date and time.');
   return at;
+}
+function credentialPath() {
+  if (process.env.HOSTLET_CONFIG) return path.resolve(process.env.HOSTLET_CONFIG);
+  const root=process.platform==='win32'
+    ? process.env.APPDATA || path.join(os.homedir(),'AppData','Roaming')
+    : process.env.XDG_CONFIG_HOME || path.join(os.homedir(),'.config');
+  return path.join(root,'hostlet','credentials.json');
+}
+async function readCredentialStore() {
+  const file=credentialPath();
+  let text;
+  try {text=await fs.readFile(file,'utf8');}
+  catch (error) {
+    if (error.code==='ENOENT') return {version:1,instances:{}};
+    throw new Error(`Cannot read the Hostlet credentials file at ${file}.`);
+  }
+  let store;
+  try {store=JSON.parse(text);}
+  catch {throw new Error(`The Hostlet credentials file at ${file} is not valid JSON.`);}
+  if (!store || store.version!==1 || !store.instances || typeof store.instances!=='object' || Array.isArray(store.instances)) {
+    throw new Error(`The Hostlet credentials file at ${file} has an unsupported format.`);
+  }
+  return store;
+}
+async function writeCredentialStore(store) {
+  const file=credentialPath(), dir=path.dirname(file);
+  await fs.mkdir(dir,{recursive:true,mode:0o700});
+  await fs.writeFile(file,`${JSON.stringify(store,null,2)}\n`,{mode:0o600});
+  try {await fs.chmod(file,0o600);} catch {}
+}
+async function credentialEntry(origin) {
+  const store=await readCredentialStore();
+  const entry=store.instances[origin];
+  return entry && typeof entry==='object' && !Array.isArray(entry) ? entry : null;
+}
+async function saveCredentialEntry(origin,patch) {
+  const store=await readCredentialStore();
+  const previous=store.instances[origin] && typeof store.instances[origin]==='object' ? store.instances[origin] : {};
+  store.instances[origin]={...previous,...patch,updatedAt:new Date().toISOString()};
+  await writeCredentialStore(store);
+  return store.instances[origin];
+}
+async function removeCredentialEntry(origin) {
+  const store=await readCredentialStore();
+  if (!Object.hasOwn(store.instances,origin)) return false;
+  delete store.instances[origin];
+  await writeCredentialStore(store);
+  return true;
+}
+function responseCookie(response) {
+  const values=typeof response.headers.getSetCookie==='function' ? response.headers.getSetCookie() : [];
+  return values.map(value=>value.split(';',1)[0]).filter(value=>value && !value.endsWith('=')).join('; ') || null;
+}
+function accountFailure(action,response,data) {
+  const code=typeof data?.code==='string' ? data.code : `HTTP_${response.status}`;
+  const message=typeof data?.error==='string' ? data.error : `HTTP ${response.status}`;
+  let hint='';
+  if (code==='ACCOUNT_EXISTS') hint=' Choose another username or run "hostlet login".';
+  else if (code==='USERNAME_REGISTRATION_DISABLED' || response.status===403) hint=' Check whether this instance allows the requested registration or login method.';
+  else if (response.status===401) hint=' Check the identifier and password.';
+  const error=new Error(`${action} failed (HTTP ${response.status}): ${message}${hint}`);
+  error.code=code;
+  error.status=response.status;
+  return error;
+}
+async function accountJson(base,pathname,{method='GET',body,cookie,action}) {
+  const headers={Origin:base.origin};
+  if (cookie) headers.Cookie=cookie;
+  if (body!==undefined) headers['Content-Type']='application/json';
+  let response;
+  try {
+    response=await fetch(new URL(pathname,base),{
+      method,
+      headers,
+      ...(body===undefined?{}:{body:JSON.stringify(body)}),
+      redirect:'error'
+    });
+  } catch {
+    const error=new Error(`${action} network error.`);
+    error.code='NETWORK';
+    throw error;
+  }
+  let data=null;
+  const type=response.headers.get('content-type') || '';
+  if (response.status!==204 && /^application\/json(?:\s*;|\s*$)/i.test(type)) {
+    try {data=await response.json();}
+    catch {
+      const error=new Error(`${action} returned invalid JSON (HTTP ${response.status}).`);
+      error.code='INVALID_RESPONSE';
+      error.status=response.status;
+      throw error;
+    }
+  }
+  if (!response.ok) throw accountFailure(action,response,data);
+  if (response.status!==204 && (!data || typeof data!=='object' || Array.isArray(data))) {
+    const error=new Error(`${action} returned an invalid response (HTTP ${response.status}).`);
+    error.code='INVALID_RESPONSE';
+    error.status=response.status;
+    throw error;
+  }
+  return {data,cookie:responseCookie(response),status:response.status};
+}
+function parseScopes(value) {
+  const scopes=(value===undefined ? 'read,publish,share' : value).split(',').map(item=>item.trim()).filter(Boolean);
+  const allowed=new Set(['read','publish','share']);
+  if (!scopes.length || scopes.some(scope=>!allowed.has(scope)) || new Set(scopes).size!==scopes.length) {
+    throw new Error('--scopes must be a comma-separated subset of read,publish,share.');
+  }
+  return scopes;
+}
+function keyOptions(opts) {
+  const name=(opts['--key-name'] || `CLI ${os.hostname()}`).trim();
+  if (!name || name.length>100) throw new Error('--key-name must contain 1-100 characters.');
+  const expiresAt=opts['--expires'] ? parseExpiry(opts['--expires']) : Date.now()+30*86400000;
+  if (expiresAt-Date.now()>365*86400000) throw new Error('--expires must be within 365 days.');
+  return {name,scopes:parseScopes(opts['--scopes']),expiresAt};
+}
+async function requireAccountPassword(opts) {
+  if (!opts['--password-stdin']) throw new Error('Add --password-stdin and pipe the account password through standard input.');
+  const password=await readStdinPassword();
+  if (password.length<12) throw new Error('The account password must contain at least 12 characters.');
+  return password;
+}
+async function createApiKey(base,cookie,password,key) {
+  const {data}=await accountJson(base,'/api/account/credentials',{
+    method:'POST',
+    cookie,
+    body:{...key,password},
+    action:'API key creation'
+  });
+  if (typeof data?.id!=='string' || !/^[A-Za-z0-9_-]{43}$/.test(data.token || '')) {
+    throw new Error('API key creation returned an invalid response.');
+  }
+  return data;
+}
+async function workspaceSummary(base,token) {
+  try {
+    const response=await fetch(new URL('/api/cli/workspaces',base),{headers:{Authorization:`Bearer ${token}`},redirect:'error'});
+    if (!response.ok) return null;
+    const data=await response.json();
+    return Array.isArray(data) ? data : null;
+  } catch {return null;}
+}
+function resolveBase() {
+  const raw=process.env.HOSTLET_URL || DEFAULT_HOSTLET_URL;
+  let base;
+  try {base=new URL(raw);}
+  catch {throw new Error('HOSTLET_URL must be a valid HTTPS origin.');}
+  if (base.username || base.password || base.pathname!=='/' || base.search || base.hash || !(base.protocol==='https:' || base.protocol==='http:' && ['localhost','127.0.0.1','[::1]'].includes(base.hostname))) {
+    throw new Error('HOSTLET_URL must be an HTTPS origin (HTTP is allowed only for loopback testing).');
+  }
+  return base;
+}
+async function resolveToken(base) {
+  const envToken=process.env.HOSTLET_TOKEN;
+  if (envToken!==undefined) {
+    if (!/^[A-Za-z0-9_-]{43}$/.test(envToken)) throw new Error('HOSTLET_TOKEN must be a 43-character API credential.');
+    return envToken;
+  }
+  const entry=await credentialEntry(base.origin);
+  if (entry && /^[A-Za-z0-9_-]{43}$/.test(entry.token || '')) return entry.token;
+  throw new Error(`No saved credential for ${base.origin}. Run "hostlet login" or "hostlet register", or set HOSTLET_TOKEN.`);
 }
 const shareStatus=share=>share.revokedAt!==null && share.revokedAt!==undefined ? 'revoked' : Number.isSafeInteger(share.expiresAt) && share.expiresAt<=Date.now() ? 'expired' : 'active';
 const formatTime=value=>Number.isSafeInteger(value) ? new Date(value).toISOString() : 'never';
@@ -301,10 +528,92 @@ async function main() {
     return;
   }
   if (rest.includes('--help') || rest.includes('-h')) {output(`${commandHelp(command)}\n`);return;}
-  const token=process.env.HOSTLET_TOKEN, raw=process.env.HOSTLET_URL || DEFAULT_HOSTLET_URL;
-  if (!/^[A-Za-z0-9_-]{43}$/.test(token || '')) throw new Error(`${usage}\nSet HOSTLET_TOKEN. ${helpHint}`);
-  const base=new URL(raw);
-  if (base.username || base.password || base.pathname!=='/' || base.search || base.hash || !(base.protocol==='https:' || base.protocol==='http:' && ['localhost','127.0.0.1','[::1]'].includes(base.hostname))) throw new Error('HOSTLET_URL must be an HTTPS origin (HTTP is allowed only for loopback testing).');
+  const base=resolveBase();
+  if (command==='register' || command==='login') {
+    const opts=options(rest,['--username','--identifier','--password-stdin','--key-name','--scopes','--expires','--no-key','--json']);
+    if (command==='register' && (!opts['--username'] || opts['--identifier']) || command==='login' && (!opts['--identifier'] || opts['--username'])) throw usageError();
+    const password=await requireAccountPassword(opts);
+    const key=opts['--no-key'] ? null : keyOptions(opts);
+    const action=command==='register' ? 'Registration' : 'Login';
+    const auth=await accountJson(base,command==='register' ? '/api/account/register' : '/api/account/login',{
+      method:'POST',
+      body:command==='register' ? {username:opts['--username'],password} : {identifier:opts['--identifier'],password},
+      action
+    });
+    const account=auth.data?.account;
+    if (!account?.id || !auth.cookie) throw new Error(`${action} succeeded, but no account session was returned.`);
+    await saveCredentialEntry(base.origin,{account,cookie:auth.cookie});
+    let credential=null,workspaces=null;
+    if (key) {
+      try {credential=await createApiKey(base,auth.cookie,password,key);}
+      catch (error) {
+        throw new Error(`${error.message} The account session was saved; run "hostlet keys create --password-stdin" to retry the API key.`);
+      }
+      await saveCredentialEntry(base.origin,{account,cookie:auth.cookie,token:credential.token});
+      workspaces=await workspaceSummary(base,credential.token);
+    }
+    const result={account,credential:credential ? {...key,id:credential.id,token:credential.token} : null,workspaces,configPath:credentialPath()};
+    if (opts['--json']) {output(`${JSON.stringify(result)}\n`);return;}
+    output(`${command==='register' ? 'Registered' : 'Signed in'} ${account.username || account.email} (${account.email}).\n`);
+    output(`Saved credentials for ${base.origin} at ${credentialPath()}.\n`);
+    if (credential) {
+      output(`API key ${credential.id} created: ${credential.token}\nThis token is shown once and was saved for this account.\n`);
+      if (workspaces?.length) output(`Workspaces:\n${workspaces.map(item=>`${item.id}\t${item.name}\t${item.role}`).join('\n')}\n`);
+      else if (workspaces===null) output('Workspace lookup was unavailable; run "hostlet workspaces" to retry.\n');
+      else output('No workspaces are available yet.\n');
+    } else {
+      output('No API key was created. Run "hostlet keys create --password-stdin" later.\n');
+    }
+    return;
+  }
+  if (command==='whoami') {
+    const opts=options(rest,['--json']);
+    const entry=await credentialEntry(base.origin);
+    if (!entry?.cookie) throw new Error(`No saved account session for ${base.origin}. Run "hostlet login" or "hostlet register".`);
+    const {data}=await accountJson(base,'/api/account/me',{cookie:entry.cookie,action:'Account lookup'});
+    if (!data.account) throw new Error('The saved account session is no longer valid. Run "hostlet login" again.');
+    output(opts['--json'] ? `${JSON.stringify({account:data.account,configPath:credentialPath()})}\n` : `${data.account.username || data.account.email}\t${data.account.email}\t${data.account.id}\n`);
+    return;
+  }
+  if (command==='logout') {
+    const opts=options(rest,['--json']);
+    const entry=await credentialEntry(base.origin);
+    if (entry?.cookie) {
+      try {await accountJson(base,'/api/account/logout',{method:'POST',cookie:entry.cookie,body:{},action:'Logout'});} catch {}
+    }
+    const removed=await removeCredentialEntry(base.origin);
+    output(opts['--json'] ? `${JSON.stringify({loggedOut:true,removed})}\n` : `Removed saved credentials for ${base.origin}.\n`);
+    return;
+  }
+  if (command==='keys') {
+    const [subcommand,...args]=rest;
+    if (!['list','create','revoke'].includes(subcommand)) throw usageError();
+    const opts=options(args,['--id','--key-name','--scopes','--expires','--password-stdin','--json']);
+    const entry=await credentialEntry(base.origin);
+    if (!entry?.cookie) throw new Error(`No saved account session for ${base.origin}. Run "hostlet login" or "hostlet register".`);
+    if (subcommand==='list') {
+      if (Object.keys(opts).some(key=>key!=='--json')) throw usageError();
+      const {data}=await accountJson(base,'/api/account/credentials',{cookie:entry.cookie,action:'API key listing'});
+      if (!Array.isArray(data?.credentials)) throw new Error('API key listing returned an invalid response.');
+      const lines=data.credentials.map(item=>`${item.id}\t${item.name}\t${item.scopes.join(',')}\texpires=${formatTime(item.expiresAt)}\t${item.revokedAt ? 'revoked' : 'active'}`);
+      output(opts['--json'] ? `${JSON.stringify(data)}\n` : (lines.length ? `${lines.join('\n')}\n` : 'No API keys.\n'));
+      return;
+    }
+    if (subcommand==='create') {
+      if (Object.keys(opts).some(key=>!['--key-name','--scopes','--expires','--password-stdin','--json'].includes(key))) throw usageError();
+      const password=await requireAccountPassword(opts),key=keyOptions(opts);
+      const credential=await createApiKey(base,entry.cookie,password,key);
+      await saveCredentialEntry(base.origin,{token:credential.token});
+      const result={...key,id:credential.id,token:credential.token,configPath:credentialPath()};
+      output(opts['--json'] ? `${JSON.stringify(result)}\n` : `API key ${credential.id} created: ${credential.token}\nThis token is shown once and was saved for this account.\n`);
+      return;
+    }
+    if (!opts['--id'] || Object.keys(opts).some(key=>!['--id','--json'].includes(key))) throw usageError();
+    await accountJson(base,`/api/account/credentials/${encodeURIComponent(opts['--id'])}`,{method:'DELETE',cookie:entry.cookie,action:'API key revocation'});
+    output(opts['--json'] ? `${JSON.stringify({revoked:true,id:opts['--id']})}\n` : `Revoked API key ${opts['--id']}.\n`);
+    return;
+  }
+  const token=await resolveToken(base);
   if (command==='workspaces' && (rest.length===0 || rest.length===1 && rest[0]==='--json')) {
     const response=await fetch(new URL('/api/cli/workspaces',base),{headers:{Authorization:`Bearer ${token}`},redirect:'error'});
     if (!response.ok) throw new Error(`Workspace lookup failed (HTTP ${response.status}).`);

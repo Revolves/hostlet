@@ -1,6 +1,6 @@
 {
   "name": "hostlet-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Command-line client for publishing and managing static applications on Hostlet.",
   "license": "MIT",
   "author": "Hostlet contributors",
@@ -17,7 +17,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test ../test/hostlet-cli.test.js ../test/hostlet-cli-help.test.js ../test/hostlet-cli-package.test.js"
+    "test": "node --test ../test/hostlet-cli.test.js ../test/hostlet-cli-help.test.js ../test/hostlet-cli-package.test.js ../test/hostlet-cli-account.test.js"
   },
   "keywords": [
     "hostlet",

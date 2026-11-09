@@ -1,20 +1,64 @@
 ---
 name: hostlet-publish
-description: Publish and manage static HTML sites on Hostlet, including the official hostlet.cn service and self-hosted instances, through the Hostlet CLI. Use when the user asks to deploy, publish, replace, roll back, share, or inspect a Hostlet application.
+description: Publish and manage static HTML sites on Hostlet, including the official hostlet.cn service and self-hosted instances. Use when the user asks to register, sign in, create an API key, deploy, publish, replace, roll back, share, or inspect a Hostlet application.
 ---
 
 # Hostlet Publish
 
-Use an installed `hostlet` command (`npm install -g hostlet-cli`) or, in a source checkout, `node cli/hostlet.js`. Do not reimplement the upload protocol.
+Use the CLI bundled with this skill. Do not reimplement the upload protocol.
 
 Source and documentation: <https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish>.
+
+## Bundled CLI
+
+The installer places an isolated CLI runtime beside this file:
+
+- Windows: `<skill-dir>\bin\hostlet.cmd`
+- macOS/Linux: `<skill-dir>/bin/hostlet`
+
+`<skill-dir>` is the directory containing this `SKILL.md`, normally `$CODEX_HOME/skills/hostlet-publish`. Use the absolute path to that wrapper. Do not assume that `hostlet` is on `PATH` and do not install a second global copy unless the bundled wrapper is missing.
+
+If the wrapper is missing, reinstall with `npx hostlet-skill install`. In a source checkout, `node cli/hostlet.js` remains a development fallback.
+
+## Account Setup
+
+The CLI can register, sign in, create an API key, and then publish. Always ask the user for permission and for the account details before creating an account or API key. Never choose a password for the user.
+
+Create a username account and save an API key in one flow:
+
+```powershell
+& "<skill-dir>\bin\hostlet.cmd" register --username alice --password-stdin
+```
+
+Sign in to an existing username or email account:
+
+```powershell
+& "<skill-dir>\bin\hostlet.cmd" login --identifier alice --password-stdin
+```
+
+Supply the password through the child process's standard input. Never put the password in a command-line argument, a shell variable that will be echoed, a log, or a file. The account password must contain at least 12 characters.
+
+`register` and `login` save the account session and, unless `--no-key` is used, create an API key with `read`, `publish`, and `share` scopes valid for 30 days. The token is shown once and is also saved in the Hostlet credentials file. Later commands read it automatically; do not ask the user to set `HOSTLET_TOKEN` again.
+
+Manage keys with:
+
+```powershell
+& "<skill-dir>\bin\hostlet.cmd" keys list
+& "<skill-dir>\bin\hostlet.cmd" keys create --key-name "Agent publisher" --password-stdin
+& "<skill-dir>\bin\hostlet.cmd" keys revoke --id KEY_ID
+& "<skill-dir>\bin\hostlet.cmd" whoami
+& "<skill-dir>\bin\hostlet.cmd" logout
+```
+
+`keys create` and `keys revoke` use the saved account session. Creating a key asks for the account password again through standard input.
+
+The credentials file is stored in the user configuration directory, or at `HOSTLET_CONFIG` when that variable is set. Do not read, print, copy, or commit it. `HOSTLET_TOKEN` is still supported for automation and takes precedence over the saved token.
 
 ## Destination
 
 - Official service: leave `HOSTLET_URL` unset. The CLI defaults to `https://hostlet.cn`.
 - Self-hosted service: set `HOSTLET_URL` to the instance's HTTPS management origin.
-- Require `HOSTLET_TOKEN`, a 43-character API credential. Obtain it from the target instance's account portal with the `read`, `publish`, and optionally `share` scopes.
-- Never use an administrator password as the token, print the token, write it to the repository, or include it in a command-line argument.
+- Never use an administrator password as an API token, print a token, or write one to the repository.
 - If the target instance has no account credential flow or `/api/cli`, stop and explain that it cannot accept CLI publishing. Do not search for a bypass.
 
 ## Before Upload
@@ -30,20 +74,21 @@ New applications are private by default. This skill must not make an application
 ## Publish
 
 ```powershell
-$env:HOSTLET_TOKEN = '...'
-hostlet workspaces --json
-hostlet publish ./dist --workspace WORKSPACE_ID --title "Site title" --json
+$hostlet = "<skill-dir>\bin\hostlet.cmd"
+& $hostlet workspaces --json
+& $hostlet publish ./dist --workspace WORKSPACE_ID --title "Site title" --json
 ```
 
 For a custom instance:
 
 ```powershell
 $env:HOSTLET_URL = 'https://hostlet.example.com'
-$env:HOSTLET_TOKEN = '...'
-hostlet workspaces --json
+& $hostlet workspaces --json
 ```
 
 Use `--entry PATH` when a ZIP or directory contains multiple HTML entry files. Use `--page` and `--revision` only when replacing an existing application.
+
+If the user has no account yet, run the account setup flow first, then `workspaces`, then publish. If the account exists but has no saved key, run `keys create --password-stdin`.
 
 ## Confirm the Result
 
