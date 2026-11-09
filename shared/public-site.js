@@ -67,6 +67,12 @@ export const publicCopy = {
       ],
     },
     cta: { title: "准备好发布下一个作品了吗？", description: "进入工作台完成上传、权限设置和版本管理。", action: "进入工作台" },
+    source: {
+      eyebrow: "GitHub",
+      title: "开源项目与构建记录",
+      description: "在 GitHub 查看我的开源项目与提交记录。Hostlet 的正式源码仓库公开后，可由实例配置直接切换到这个入口。",
+      action: "访问 GitHub",
+    },
     footer: { note: "Hostlet · 你的网站，应该由你做主", workspace: "工作台", account: "账户与工作空间", report: "举报应用" },
   },
   en: {
@@ -134,6 +140,12 @@ export const publicCopy = {
       ],
     },
     cta: { title: "Ready to publish your next project?", description: "Open the workspace to upload, set access, and manage releases.", action: "Open workspace" },
+    source: {
+      eyebrow: "GITHUB",
+      title: "Open-source work, in the open",
+      description: "Browse my open-source projects and commit history on GitHub. Once the canonical Hostlet repository is public, this instance can point directly to it.",
+      action: "Visit GitHub",
+    },
     footer: { note: "Hostlet · Your site should be yours to control", workspace: "Workspace", account: "Account and workspaces", report: "Report an app" },
   },
 };

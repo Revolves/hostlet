@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { accountMigrationSql, accountTokensMultiUseMigrationSql, createAccounts, normalizeEmail } from '../server/accounts.js';
+import { accountMigrationSql, accountTokensMultiUseMigrationSql, accountView, createAccounts, normalizeEmail, normalizeUsername, resolveAccountEmail, usernameEmail, usernameFromEmail } from '../server/accounts.js';
 import { workspaceSchema, createWorkspaceService } from '../server/workspaces.js';
 
 function setup(t, options = {}) {
@@ -27,6 +27,27 @@ test('normalizes and validates email and rejects weak or oversized passwords', a
     assert.throws(() => normalizeEmail(email));
   }
   for (const password of ['short', 'x'.repeat(1025)]) await assert.rejects(accounts.register({ email: 'a@example.com', password }));
+});
+
+test('username registration creates a verified account without sending email', async t => {
+  const { db, accounts, mail } = setup(t);
+  assert.equal(normalizeUsername(' Alice_01 '), 'alice_01');
+  assert.equal(usernameFromEmail(usernameEmail('alice_01')), 'alice_01');
+  assert.equal(resolveAccountEmail({ identifier: 'Alice_01' }), 'alice_01@users.hostlet.invalid');
+  for (const username of ['ab', 'admin', 'a b', '-alice', 'alice-', 'alice!']) assert.throws(() => normalizeUsername(username));
+  const user = await accounts.register({ username: 'Alice_01', password: 'long password 123' });
+  assert.equal(user.email, 'alice_01@users.hostlet.invalid');
+  assert.equal(user.username, 'alice_01');
+  assert.equal(mail.length, 0);
+  assert.equal(db.prepare('SELECT email_verified_at FROM users WHERE id=?').get(user.id).email_verified_at, 1000000);
+  assert.equal(accountView(user).username, 'alice_01');
+  assert.equal((await accounts.authenticate({ identifier: 'alice_01', password: 'long password 123' })).id, user.id);
+  assert.equal((await accounts.authenticate({ email: user.email, password: 'long password 123' })).id, user.id);
+  await assert.rejects(accounts.register({ username: 'ALICE_01', password: 'another password' }), { code: 'EMAIL_EXISTS' });
+  await assert.rejects(accounts.register({ email: 'alice_01@users.hostlet.invalid', password: 'another password' }), { code: 'INVALID_EMAIL' });
+  await accounts.sendVerification({ email: user.email });
+  await accounts.requestPasswordReset({ email: user.email });
+  assert.equal(mail.length, 0);
 });
 
 test('registration is atomic, stores no secrets, verifies once and creates a personal space', async t => {

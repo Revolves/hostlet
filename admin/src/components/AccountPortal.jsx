@@ -49,7 +49,7 @@ const zh = {
   "Open application": "打开应用", "Opening…": "正在打开…", "Application access is not available yet; preview and sharing are not available.": "应用访问暂不可用，预览和分享功能尚未开放。", "Application access configuration could not be loaded. Try again.": "无法读取应用访问配置，请重试。", "Application access configuration is invalid.": "应用访问域名配置无效。", "Checking application access…": "正在检查应用访问配置…", "Retry access configuration": "重试读取访问配置", "Pop-up blocked. Allow pop-ups for this site and try again.": "弹窗被阻止，请允许此网站打开弹窗后重试。", "Unable to open the application. Please try again.": "无法打开应用，请重试。", "The application window was closed. Please try again.": "应用窗口已关闭，请重试。", "Invalid application identifier.": "应用标识无效。", "Applications open in a new window. Preview and sharing are not available yet.": "应用将在新窗口打开，预览和分享功能尚未开放。",
   "Applications": "应用", "Upload application": "上传应用", "Application title": "应用标题", "HTML or ZIP file": "HTML 或 ZIP 文件", "Entry file": "入口文件", "For ZIP files, enter the HTML path inside the archive. Defaults to index.html.": "ZIP 文件请输入压缩包内的 HTML 路径，默认为 index.html。", "Private": "私有", "Public": "公开", "Make public": "设为公开", "Make private": "设为私有", "Public link": "公开链接", "Make this application publicly accessible? Anyone with the address can access it.": "设为公开后，任何知道地址的人都可以访问。确定继续？", "Make this application private?": "确定将此应用设为私有？", "Application access updated.": "应用访问权限已更新。", "Upload": "上传", "Uploading…": "正在上传…", "No applications in this workspace.": "此工作空间暂无应用。", "Application access, preview and sharing are not available yet.": "应用访问、预览和分享功能暂不可用。", "File size and archive limits are enforced by the server.": "文件大小和压缩包限制由服务器控制。", "Edit title": "修改标题", "Save title": "保存标题", "Confirm changing this application title?": "确定修改此应用的标题？", "Delete application": "删除应用", "Delete this application? This cannot be undone.": "确定删除此应用？此操作无法撤销。", "Application uploaded.": "应用已上传。", "Application deleted.": "应用已删除。", "Application title updated.": "应用标题已更新。", "Could not load applications.": "无法加载应用列表。", "Please check the title, file, entry path and server upload limits.": "请检查标题、文件、入口路径及服务器上传限制。", "The file exceeds the server upload limit.": "文件超过服务器上传限制。", "The request may have completed. Refresh the application list before retrying.": "请求可能已完成，请刷新应用列表后再重试。", "Application list": "应用列表", "Refresh applications": "刷新应用列表", "Type": "类型", "Access": "访问权限",
   "Account and workspaces": "账户与工作空间", "A place for your work.": "为你的工作留一处空间。", "Sign in to manage your personal and team spaces.": "登录后管理个人和团队空间。",
-  "Delete account": "注销账户", "Permanently delete this account and all personal applications? This cannot be undone.": "确定永久注销账户并删除全部个人应用？此操作无法撤销。", "Your personal applications and account email will be removed. Team applications remain with the team. Limited moderation and security records may be retained as described in the privacy notice.": "个人应用和账户邮箱将被删除；团队应用仍归团队所有。按隐私说明，有限的管理和安全记录可能保留。", "Current password": "当前密码", "Delete account permanently": "永久注销账户", "Checking account deletion…": "正在检查账户注销条件…", "You are the last owner of these teams. Transfer ownership before deleting your account.": "你是以下团队的最后一名所有者，请先转移所有权再注销账户。", "Account deleted. A new account can be created with the same email.": "账户已注销，可使用同一邮箱重新注册。", "Account deletion status could not be loaded.": "无法读取账户注销条件。", "Transfer ownership of every team you own before deleting your account.": "注销前请先为每个团队转移所有权。",
+  "Delete account": "注销账户", "Permanently delete this account and all personal applications? This cannot be undone.": "确定永久注销账户并删除全部个人应用？此操作无法撤销。", "Your personal applications and account email will be removed. Team applications remain with the team. Limited moderation and security records may be retained as described in the privacy notice.": "个人应用和账户邮箱将被删除；团队应用仍归团队所有。按隐私说明，有限的管理和安全记录可能保留。", "Current password": "当前密码", "Delete account permanently": "永久注销账户", "Checking account deletion…": "正在检查账户注销条件…", "You are the last owner of these teams. Transfer ownership before deleting your account.": "你是以下团队的最后一名所有者，请先转移所有权再注销账户。", "Account deleted. A new account can be created with the same email or username.": "账户已注销，可使用同一邮箱或用户名重新注册。", "Account deletion status could not be loaded.": "无法读取账户注销条件。", "Transfer ownership of every team you own before deleting your account.": "注销前请先为每个团队转移所有权。",
   "Account sign in": "账户登录", "Create account": "注册账户", "Forgot password": "忘记密码", "Reset password": "重置密码", "Verify email": "验证邮箱", "Email": "邮箱", "Password": "密码", "New password": "新密码", "At least 12 characters": "至少 12 个字符", "Sign in": "登录", "Register": "注册", "Send reset link": "发送重置链接", "Save password": "保存密码", "Verify": "验证", "Back to sign in": "返回登录", "Resend verification": "重新发送验证邮件", "Send verification link": "发送验证链接", "Administrator access": "管理员入口", "Working…": "处理中…", "Try again": "重试", "Refresh": "刷新", "Sign out": "退出登录", "Workspaces": "工作空间", "Personal": "个人", "Team": "团队", "Create a team": "创建团队", "Team name": "团队名称", "Create": "创建", "Join a team": "申请加入团队", "Join link or token": "加入链接或令牌", "Request to join": "申请加入", "Members": "成员", "Join requests": "加入申请", "Owner": "所有者", "Editor": "编辑者", "Viewer": "查看者", "Approve": "批准", "Reject": "拒绝", "Remove": "移除", "Generate a new join link": "生成新的加入链接", "Revoke join link": "停用加入链接", "Generating a new link invalidates the previous link.": "生成新链接将使旧链接失效。", "Copy link": "复制链接", "Link copied.": "链接已复制。", "Copy the link before leaving this page; it will not be shown again.": "请在离开页面前复制链接；之后无法再次查看。", "No pending requests.": "暂无待审批申请。", "No workspaces yet.": "暂无工作空间。", "Application upload is under development and is not available here yet.": "应用上传功能正在开发，暂不可用。", "If applicable, check your email for further instructions.": "如果符合条件，请查看邮件中的后续说明。", "Email verified. You can now sign in.": "邮箱已验证，现在可以登录。", "Password reset. You can now sign in.": "密码已重置，现在可以登录。", "Join request submitted.": "加入申请已提交。", "Changes saved.": "更改已保存。", "Link revoked.": "链接已停用。", "The link is missing or expired. Request a new one.": "链接缺失或已失效，请重新申请。", "Network error. Check your connection and try again.": "网络连接失败，请检查网络后重试。", "Your session has expired. Please sign in again.": "会话已过期，请重新登录。", "Request denied or registration is disabled.": "请求被拒绝，或注册功能未启用。", "The link or item was not found.": "链接或项目不存在。", "The request conflicts with the current state. Refresh and try again.": "操作与当前状态冲突，请刷新后重试。", "The last owner cannot be removed or changed.": "不能移除或更改最后一位所有者。", "Too many requests. Please try again later.": "请求过于频繁，请稍后重试。", "Invalid details or expired link. Please check and try again.": "信息无效或链接已过期，请检查后重试。", "Unable to complete the request. Please try again.": "无法完成请求，请重试。", "Could not access the clipboard. Select and copy the link instead.": "无法访问剪贴板，请手动选择并复制链接。", "Select a workspace to see its members.": "选择一个空间以查看成员。", "Loading…": "加载中…", "Remove this member?": "确定移除此成员？", "Cancel": "取消", "Use another account": "切换账户", "Join link": "加入链接", "Your role": "你的角色", "You": "你", "Request status may have changed. Refresh to check before retrying.": "申请状态可能已变化，请刷新后再重试。"
 };
 Object.assign(zh, {"Team and members":"团队与成员", "Account settings":"账户设置"});
@@ -57,6 +57,29 @@ const roles = ["owner", "editor", "viewer"];
 Object.assign(zh, {"Submit for review":"提交公开审核", "Review submitted.":"已提交公开审核。", "Review pending":"待审核", "Review approved":"审核已批准", "Review rejected":"审核未通过", "Approve publication":"批准公开", "Reject publication":"驳回申请", "Review comment (optional)":"审核意见（可选）", "Review decision saved.":"审核决定已保存。", "Review comment":"审核意见", "Make this public team application private before changing its version.":"请先将团队公开应用设为私有，再更换版本并重新提交审核。"});
 zh['Review outdated; submit again']='版本已变更，请重新提交审核';
 Object.assign(zh, {"API credentials":"API 凭据", "Create credential":"创建凭据", "Credential name":"凭据名称", "Valid for 30 days; allows reading, publishing, and managing shares in your workspaces.":"有效期 30 天，可在你有权限的工作空间中读取、发布和管理分享。", "Copy this credential now; it will not be shown again.":"请立即复制此凭据，之后无法再次查看。", "Credential":"凭据", "Revoke credential":"撤销凭据", "Revoke this credential?":"确定撤销此凭据？", "No credentials yet.":"暂无凭据。", "Expires":"到期", "Revoked":"已撤销"});
+Object.assign(zh, {
+  "Email or username": "邮箱或用户名",
+  "Use an email or a username. Email accounts require verification; username accounts sign in immediately.": "可以使用邮箱或用户名注册。邮箱账户需要验证邮件，用户名账户注册后会直接登录。",
+  "Username accounts cannot recover passwords by email. Keep your password safe.": "用户名账户暂不支持邮件找回密码，请妥善保存密码。",
+  "API Keys": "API Key",
+  "Create an API key": "创建 API Key",
+  "API key name": "API Key 名称",
+  "Valid for 30 days. Use it as HOSTLET_TOKEN.": "有效期 30 天，用作 HOSTLET_TOKEN。",
+  "Create API key": "创建 API Key",
+  "Copy API key": "复制 API Key",
+  "API key copied.": "API Key 已复制。",
+  "No API keys yet.": "暂无 API Key。",
+  "Use with CLI or Skill": "用于 CLI 或 Skill",
+  "Official instance is used when HOSTLET_URL is omitted.": "省略 HOSTLET_URL 时使用官方实例。",
+  "Set HOSTLET_URL for a self-hosted instance.": "自建实例需要设置 HOSTLET_URL。",
+  "That username is already taken.": "该用户名已被使用。",
+  "Email registration is disabled.": "邮箱注册未启用。",
+  "Username registration is disabled.": "用户名注册未启用。",
+  "Account created. You are signed in.": "账户已创建，已自动登录。",
+  "Username": "用户名",
+  "Email accounts require verification before sign-in.": "邮箱账户需要先完成邮件验证才能登录。",
+  "Choose a username. Username accounts sign in immediately and cannot recover passwords by email.": "请设置用户名。用户名账户注册后会直接登录，且暂不支持通过邮件找回密码。"
+});
 const roleLabels = { owner: "Owner", editor: "Editor", viewer: "Viewer" };
 const auditActions = {"workspace.created":"Created workspace","join_link.created":"Created or renewed join link","join_link.revoked":"Revoked join link","join_request.submitted":"Submitted join request","join_request.approved":"Approved join request","join_request.rejected":"Rejected join request","member.role_changed":"Changed member role","member.removed":"Removed member","member.left":"Left team","page.created":"Created application","page.replaced":"Uploaded new version","page.restored":"Restored version","page.renamed":"Renamed application","page.deleted":"Deleted application","page.version_deleted":"Deleted version","page.visibility_public":"Made application public","page.visibility_private":"Made application private","share.created":"Created share","share.revoked":"Revoked share"};
 auditActions['page.cli_published']='Published via CLI';
@@ -109,7 +132,7 @@ async function request(path, method = "GET", body) {
   if (response.status !== 204) { try { data = await response.json(); } catch { /* An unavailable API may return HTML. */ } }
   if (!response.ok) {
     const pageRequest = path.startsWith("/api/workspaces/") && path.includes("/pages");
-    const message = data?.code === "ZIP_TOO_MANY_ENTRIES" ? "The ZIP contains more than 4,000 entries, including folders. Remove unnecessary files or folders and try again." : data?.code === "ZIP_UNSUPPORTED" ? "ZIP64 is not supported. Recreate the archive as a standard ZIP and try again." : data?.code === "QUOTA_EXCEEDED" ? data.reason === "apps" ? "The workspace has reached its application limit. Remove an application or ask an administrator to increase the limit." : data.reason === "storage" ? "Not enough workspace storage for this upload. Delete old versions or applications, wait for other uploads to finish, or ask an administrator to increase the limit. ZIP contents count toward storage after extraction." : "The workspace quota does not allow this upload. Check application and storage limits or ask an administrator." : data?.code === "ENTRY_SELECTION_REQUIRED" && validEntryOptions(data?.candidates) ? "Choose an entry file from the ZIP and upload again." : data?.code === "ENTRY_NOT_FOUND" ? "The ZIP has no matching HTML entry. Add one or check the entry path." : data?.code === "ENTRY_TOO_MANY" ? "The ZIP has too many HTML entries. Enter the desired entry path." : data?.code === "HISTORY_LIMIT" ? "The version limit is reached. Delete an old version before uploading another." : data?.code === "LAST_OWNER" ? "The last owner cannot be removed or changed." : ({ 400: pageRequest ? "Please check the title, file, entry path and server upload limits." : "Invalid details or expired link. Please check and try again.", 401: path === "/api/account/login" ? "Invalid details or expired link. Please check and try again." : "Your session has expired. Please sign in again.", 403: "Request denied or registration is disabled.", 404: "The link or item was not found.", 409: "The request conflicts with the current state. Refresh and try again.", 413: "The file exceeds the server upload limit.", 429: "Too many requests. Please try again later." })[response.status] || "Unable to complete the request. Please try again.";
+    const message = data?.code === "ACCOUNT_EXISTS" ? "That username is already taken." : data?.code === "EMAIL_REGISTRATION_DISABLED" ? "Email registration is disabled." : data?.code === "USERNAME_REGISTRATION_DISABLED" ? "Username registration is disabled." : data?.code === "ZIP_TOO_MANY_ENTRIES" ? "The ZIP contains more than 4,000 entries, including folders. Remove unnecessary files or folders and try again." : data?.code === "ZIP_UNSUPPORTED" ? "ZIP64 is not supported. Recreate the archive as a standard ZIP and try again." : data?.code === "QUOTA_EXCEEDED" ? data.reason === "apps" ? "The workspace has reached its application limit. Remove an application or ask an administrator to increase the limit." : data.reason === "storage" ? "Not enough workspace storage for this upload. Delete old versions or applications, wait for other uploads to finish, or ask an administrator to increase the limit. ZIP contents count toward storage after extraction." : "The workspace quota does not allow this upload. Check application and storage limits or ask an administrator." : data?.code === "ENTRY_SELECTION_REQUIRED" && validEntryOptions(data?.candidates) ? "Choose an entry file from the ZIP and upload again." : data?.code === "ENTRY_NOT_FOUND" ? "The ZIP has no matching HTML entry. Add one or check the entry path." : data?.code === "ENTRY_TOO_MANY" ? "The ZIP has too many HTML entries. Enter the desired entry path." : data?.code === "HISTORY_LIMIT" ? "The version limit is reached. Delete an old version before uploading another." : data?.code === "LAST_OWNER" ? "The last owner cannot be removed or changed." : ({ 400: pageRequest ? "Please check the title, file, entry path and server upload limits." : "Invalid details or expired link. Please check and try again.", 401: path === "/api/account/login" ? "Invalid details or expired link. Please check and try again." : "Your session has expired. Please sign in again.", 403: "Request denied or registration is disabled.", 404: "The link or item was not found.", 409: "The request conflicts with the current state. Refresh and try again.", 413: "The file exceeds the server upload limit.", 429: "Too many requests. Please try again later." })[response.status] || "Unable to complete the request. Please try again.";
     const error = new Error(data?.code === 'PUBLIC_REVIEW_REQUIRED' ? 'Make this public team application private before changing its version.' : message); error.status = response.status; error.code = data?.code; error.candidates = data?.candidates; throw error;
   }
   if (response.status !== 204 && data === null) throw new Error("Unable to complete the request. Please try again.");
@@ -379,21 +402,35 @@ function TeamActivity({workspaceId,L}) {
 }
 
 function ApiCredentials({L}) {
-  const [items,setItems]=useState([]), [token,setToken]=useState(''), [error,setError]=useState(''), [busy,setBusy]=useState(false), [open,setOpen]=useState(false);
+  const [items,setItems]=useState([]), [token,setToken]=useState(''), [error,setError]=useState(''), [notice,setNotice]=useState(''), [busy,setBusy]=useState(false);
   async function load() { const data=await request('/api/account/credentials'); if(!Array.isArray(data.credentials)) throw new Error('Unable to complete the request. Please try again.'); setItems(data.credentials); }
   async function action(fn) {setBusy(true);setError('');try{await fn();}catch(err){setError(err.message);}finally{setBusy(false);}}
+  useEffect(()=>{action(load);},[]);
   async function create(event) {
     event.preventDefault();const form=event.currentTarget, values=new FormData(form);
-    await action(async()=>{const result=await request('/api/account/credentials','POST',{name:String(values.get('name')),password:String(values.get('password')),scopes:['read','publish','share'],expiresAt:Date.now()+30*86400000});if(!/^[A-Za-z0-9_-]{43}$/.test(result.token || ''))throw new Error('Unable to complete the request. Please try again.');setToken(result.token);form.reset();await load();});
+    await action(async()=>{const result=await request('/api/account/credentials','POST',{name:String(values.get('name')),password:String(values.get('password')),scopes:['read','publish','share'],expiresAt:Date.now()+30*86400000});if(!/^[A-Za-z0-9_-]{43}$/.test(result.token || ''))throw new Error('Unable to complete the request. Please try again.');setToken(result.token);setNotice('');form.reset();await load();});
   }
-  return <details className="account-portal__details" onToggle={event=>{const next=event.currentTarget.open;setOpen(next);if(next) action(load);else setToken('');}}>
-    <summary>{L('API credentials')}</summary>
-    {open && <><p>{L('Valid for 30 days; allows reading, publishing, and managing shares in your workspaces.')}</p>{error && <p className="account-portal__alert" role="alert">{L(error)}</p>}
-      <form className="account-portal__form" onSubmit={create}><label>{L('Credential name')}<input name="name" maxLength={100} required /></label><label>{L('Current password')}<input name="password" type="password" autoComplete="current-password" required /></label><button disabled={busy}>{L('Create credential')}</button></form>
-      {token && <div className="account-portal__generated"><label>{L('Credential')}<input readOnly value={token} onFocus={event=>event.target.select()} /></label><small>{L('Copy this credential now; it will not be shown again.')}</small></div>}
-      {items.length===0 ? <p>{L('No credentials yet.')}</p> : <ul className="account-portal__list">{items.map(item=><li key={item.id}><span className="account-portal__identity">{item.name} · {L('Expires')}: {new Date(item.expiresAt).toLocaleString()}{item.revokedAt!==null ? ` · ${L('Revoked')}` : ''}{Array.isArray(item.scopes) ? ` · ${item.scopes.join(', ')}` : ''}</span>{item.revokedAt===null && <button type="button" disabled={busy} onClick={()=>{if(window.confirm(L('Revoke this credential?')))action(async()=>{await request(`/api/account/credentials/${encodeURIComponent(item.id)}`,'DELETE',{});setToken('');await load();});}}>{L('Revoke credential')}</button>}</li>)}</ul>}
-    </>}
-  </details>;
+  async function copyToken() {
+    try { await navigator.clipboard.writeText(token); setNotice('API key copied.'); }
+    catch { setError('Could not access the clipboard. Select and copy the link instead.'); }
+  }
+  return <section className="account-portal__details account-portal__api-keys">
+    <p className="account-portal__eyebrow">CLI / SKILL</p>
+    <h2>{L('API Keys')}</h2>
+    <p>{L('Valid for 30 days; allows reading, publishing, and managing shares in your workspaces.')}</p>
+    <div className="account-portal__keyguide">
+      <div><code>HOSTLET_TOKEN</code><span>{L('Copy this credential now; it will not be shown again.')}</span></div>
+      <div><code>HOSTLET_URL</code><span>{L('Official instance is used when HOSTLET_URL is omitted.')} {L('Set HOSTLET_URL for a self-hosted instance.')}</span></div>
+    </div>
+    {error && <p className="account-portal__alert" role="alert">{L(error)}</p>}
+    {notice && <p className="account-portal__notice" role="status">{L(notice)}</p>}
+    <form className="account-portal__form" onSubmit={create}><label>{L('API key name')}<input name="name" defaultValue="CLI / Skill" maxLength={100} required /></label><label>{L('Current password')}<input name="password" type="password" autoComplete="current-password" required /></label><button disabled={busy}>{L('Create API key')}</button></form>
+    {token && <div className="account-portal__generated"><label>{L('API Keys')}<input readOnly value={token} onFocus={event=>event.target.select()} /></label><button type="button" onClick={copyToken}>{L('Copy API key')}</button><small>{L('Copy this credential now; it will not be shown again.')}</small></div>}
+    <h3>{L('Use with CLI or Skill')}</h3>
+    <pre className="account-portal__code"><code>{`export HOSTLET_TOKEN="${token || 'YOUR_API_KEY'}"
+hostlet publish ./dist --workspace WORKSPACE_ID --title "My application"`}</code></pre>
+    {items.length===0 ? <p>{L('No API keys yet.')}</p> : <ul className="account-portal__list">{items.map(item=><li key={item.id}><span className="account-portal__identity">{item.name} · {L('Expires')}: {new Date(item.expiresAt).toLocaleString()}{item.revokedAt!==null ? ` · ${L('Revoked')}` : ''}{Array.isArray(item.scopes) ? ` · ${item.scopes.join(', ')}` : ''}</span>{item.revokedAt===null && <button type="button" disabled={busy} onClick={()=>{if(window.confirm(L('Revoke this credential?')))action(async()=>{await request(`/api/account/credentials/${encodeURIComponent(item.id)}`,'DELETE',{});setToken('');await load();});}}>{L('Revoke credential')}</button>}</li>)}</ul>}
+  </section>;
 }
 
 function AccountDeletion({ L, onDeleted, onSessionExpired }) {
@@ -461,8 +498,17 @@ export default function AccountPortal({ onLegacyLogin }) {
   const [hosting, setHosting] = useState({ status: "loading", domain: null });
   const [retention, setRetention] = useState(null);
   const [hostingRevision, setHostingRevision] = useState(0);
+  const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [registrationMethods, setRegistrationMethods] = useState({ email: true, username: false });
   const selected = spaces.find(space => space.id === selectedId);
   const isOwner = selected?.type === "team" && selected.role === "owner";
+  const accountName = account?.username || account?.email || "";
+  const registerLabel = registrationMethods.email && registrationMethods.username ? "Email or username" : registrationMethods.email ? "Email" : "Username";
+  const registerHint = registrationMethods.email && registrationMethods.username
+    ? "Use an email or a username. Email accounts require verification; username accounts sign in immediately."
+    : registrationMethods.email
+      ? "Email accounts require verification before sign-in."
+      : "Choose a username. Username accounts sign in immediately and cannot recover passwords by email.";
 
   async function loadSession() {
     setChecking(true); setError("");
@@ -478,6 +524,8 @@ export default function AccountPortal({ onLegacyLogin }) {
       if (!active) return;
       const config = hostingConfig(data);
       const policy=data.retention;
+      setRegistrationOpen(data.registration === true);
+      setRegistrationMethods({ email: data.registrationMethods?.email !== false, username: data.registrationMethods?.username === true });
       setRetention(policy?.mode === "long-term" ? policy : policy?.mode === "inactivity" && data.retentionActive === true && Number.isSafeInteger(policy.days) && Number.isSafeInteger(policy.notifyBeforeDays) ? policy : null);
       setHosting(config ? { status: "ready", config } : data.ipHostingOrigin || data.hostingDomain != null ? { status: "invalid", config: null } : { status: "unavailable", config: null });
     }).catch(() => { if (active) { setHosting({ status: "error", domain: null }); setRetention(null); } });
@@ -515,14 +563,19 @@ export default function AccountPortal({ onLegacyLogin }) {
     const form = event.currentTarget;
     const values = new FormData(form);
     const email = String(values.get("email") || "").trim();
+    const identifier = String(values.get("identifier") || email || "").trim();
     const password = String(values.get("password") || "");
     const token = link.current?.token;
     if ((mode === "verify" || mode === "reset") && !token) { setError("The link is missing or expired. Request a new one."); return; }
-    const routes = { login: ["login", { email, password }], register: ["register", { email, password }], forgot: ["forgot-password", { email }], resend: ["resend-verification", { email }], verify: ["verify", { token }], reset: ["reset-password", { token, password }] };
+    const routes = { login: ["login", { identifier, password }], register: ["register", { identifier, password }], forgot: ["forgot-password", { email }], resend: ["resend-verification", { email }], verify: ["verify", { token }], reset: ["reset-password", { token, password }] };
     const [route, body] = routes[mode];
+    let signedInDuringSubmit = false;
     const ok = await run(async () => {
       const data = await request(`/api/account/${route}`, "POST", body);
-      if (mode === "login") setAccount(data.account);
+      if (data.account) {
+        setAccount(data.account);
+        signedInDuringSubmit = true;
+      }
       if (mode === "reset") {
         // The reset revokes the affected account's sessions, which may include
         // this tab. A link can also belong to a different signed-in account.
@@ -532,6 +585,7 @@ export default function AccountPortal({ onLegacyLogin }) {
     }, mode === "verify" ? "Email verified. You can now sign in." : mode === "reset" ? "Password reset. You can now sign in." : ["register", "forgot", "resend"].includes(mode) ? "If applicable, check your email for further instructions." : "");
     if (ok) {
       form.reset();
+      if (mode === "register" && signedInDuringSubmit) setNotice("Account created. You are signed in.");
       if (mode === "verify" || mode === "reset") { link.current = null; initialLink = null; setMode("login"); }
     }
   }
@@ -560,15 +614,17 @@ export default function AccountPortal({ onLegacyLogin }) {
         {notice === "If applicable, check your email for further instructions." ? <p>{L("If you do not receive an email, check spam, try again, or contact the administrator.")}</p> : null}
         {!account || verifyOrReset ? <div className="account-portal__panel"><h2>{L(({ login: "Account sign in", register: "Create account", forgot: "Forgot password", resend: "Resend verification", verify: "Verify email", reset: "Reset password" })[mode])}</h2>{mode === "register" ? retentionNote : null}
           <form onSubmit={submitAccount} className="account-portal__form">
-            {["login", "register", "forgot", "resend"].includes(mode) ? <label>{L("Email")}<input name="email" type="email" autoComplete="email" required /></label> : null}
+            {["login", "register"].includes(mode) ? <label>{L(mode === "register" ? registerLabel : "Email or username")}<input name="identifier" type={mode === "register" && registerLabel === "Email" ? "email" : "text"} autoComplete={mode === "register" && registerLabel === "Email" ? "email" : "username"} required /></label> : null}
+            {["forgot", "resend"].includes(mode) ? <label>{L("Email")}<input name="email" type="email" autoComplete="email" required /></label> : null}
             {["login", "register", "reset"].includes(mode) ? <label>{L(mode === "reset" ? "New password" : "Password")}<input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={mode === "login" ? undefined : 12} required />{mode !== "login" ? <small>{L("At least 12 characters")}</small> : null}</label> : null}
             <button className="account-portal__primary" disabled={busy} type="submit">{L(busy ? "Working…" : ({ login: "Sign in", register: "Register", forgot: "Send reset link", resend: "Send verification link", verify: "Verify", reset: "Save password" })[mode])}</button>
+            {mode === "register" ? <small>{L(registerHint)}</small> : null}
           </form>
-          <nav className="account-portal__links" aria-label={L("Account and workspaces")}>{mode !== "login" ? <button type="button" onClick={() => changeMode("login")}>{L("Back to sign in")}</button> : <><button type="button" onClick={() => changeMode("register")}>{L("Create account")}</button><button type="button" onClick={() => changeMode("forgot")}>{L("Forgot password")}</button><button type="button" onClick={() => changeMode("resend")}>{L("Resend verification")}</button>{onLegacyLogin ? <button type="button" onClick={onLegacyLogin}>{L("Administrator access")}</button> : null}</>}</nav>
+          <nav className="account-portal__links" aria-label={L("Account and workspaces")}>{mode !== "login" ? <button type="button" onClick={() => changeMode("login")}>{L("Back to sign in")}</button> : <>{registrationOpen ? <button type="button" onClick={() => changeMode("register")}>{L("Create account")}</button> : null}{registrationMethods.email ? <><button type="button" onClick={() => changeMode("forgot")}>{L("Forgot password")}</button><button type="button" onClick={() => changeMode("resend")}>{L("Resend verification")}</button></> : null}{onLegacyLogin ? <button type="button" onClick={onLegacyLogin}>{L("Administrator access")}</button> : null}</>}</nav>
         </div> : <>
-          <div className="account-portal__heading"><div><p className="account-portal__eyebrow">{account.email}</p><h2>{L("Workspaces")}</h2></div><button type="button" disabled={busy} onClick={() => { setError(""); setRevision(value => value + 1); setHostingRevision(value => value + 1); }}>{L("Refresh")}</button></div>{retentionNote}
+          <div className="account-portal__heading"><div><p className="account-portal__eyebrow">{accountName}</p><h2>{L("Workspaces")}</h2></div><button type="button" disabled={busy} onClick={() => { setError(""); setRevision(value => value + 1); setHostingRevision(value => value + 1); }}>{L("Refresh")}</button></div>{retentionNote}
           <div className="account-portal__spaces">{spaces.length ? spaces.map(space => <button type="button" key={space.id} aria-pressed={space.id === selectedId} onClick={() => setSelectedId(space.id)}><strong>{space.name}</strong><span>{L(space.type === "personal" ? "Personal" : "Team")} · {L(roleLabels[space.role] || space.role)}</span></button>) : <p>{L("No workspaces yet.")}</p>}</div>
-          <nav className="account-portal__tabs" aria-label={L("Account and workspaces")}>{[["apps", "Applications"], ["team", "Team and members"], ["settings", "Account settings"]].map(([id, title]) => <button key={id} type="button" aria-pressed={activeTab === id} onClick={() => setActiveTab(id)}>{L(title)}</button>)}</nav>
+          <nav className="account-portal__tabs" aria-label={L("Account and workspaces")}>{[["apps", "Applications"], ["team", "Team and members"], ["api", "API Keys"], ["settings", "Account settings"]].map(([id, title]) => <button key={id} type="button" aria-pressed={activeTab === id} onClick={() => setActiveTab(id)}>{L(title)}</button>)}</nav>
           <div hidden={activeTab !== "team"}><details open={link.current?.mode === "join" || undefined}><summary>{L("Create a team")} / {L("Join a team")}</summary><div className="account-portal__forms"><form onSubmit={async event => { event.preventDefault(); const form = event.currentTarget; if (await mutate("/api/workspaces", "POST", { name: String(new FormData(form).get("name")).trim(), type: "team" })) form.reset(); }}><h3>{L("Create a team")}</h3><label>{L("Team name")}<input name="name" maxLength={200} required /></label><button disabled={busy}>{L("Create")}</button></form>
             <form onSubmit={submitJoin}><h3>{L("Join a team")}</h3><label>{L("Join link or token")}<input name="join" defaultValue={link.current?.mode === "join" ? link.current.token : ""} required autoComplete="off" /></label><button disabled={busy}>{L("Request to join")}</button></form></div></details></div>
           {selected ? <><div hidden={activeTab !== "apps"}><WorkspaceApplications key={selected.id} workspace={selected} L={L} hosting={hosting} retryHosting={() => setHostingRevision(value => value + 1)} onSessionExpired={() => { setAccount(null); setError(""); setMode("login"); }} /></div><section hidden={activeTab !== "team"} className="account-portal__details"><div className="account-portal__heading"><div><p className="account-portal__eyebrow">{L(selected.type === "personal" ? "Personal" : "Team")}</p><h2>{selected.name}</h2></div><span>{L("Your role")}: {L(roleLabels[selected.role] || selected.role)}</span></div>
@@ -578,8 +634,9 @@ export default function AccountPortal({ onLegacyLogin }) {
               <h3>{L("Join link")}</h3><p>{L("Generating a new link invalidates the previous link.")}</p><div className="account-portal__links"><button type="button" disabled={busy} onClick={() => run(async () => { const data = await request(`${base}/join-link`, "POST", {}); const url = new URL("/join-workspace", window.location.origin); url.hash = new URLSearchParams({ token: data.token }).toString(); setJoinLink(url.href); }, "")}>{L("Generate a new join link")}</button><button type="button" disabled={busy} onClick={async () => { if (await mutate(`${base}/join-link`, "DELETE", undefined, "Link revoked.")) setJoinLink(""); }}>{L("Revoke join link")}</button></div>
               {joinLink ? <div className="account-portal__generated"><label>{L("Join link")}<input value={joinLink} readOnly onFocus={event => event.target.select()} /></label><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(joinLink); setNotice("Link copied."); } catch { setError("Could not access the clipboard. Select and copy the link instead."); } }}>{L("Copy link")}</button><small>{L("Copy the link before leaving this page; it will not be shown again.")}</small></div> : null}</> : null}{selected.role === "owner" && <TeamActivity key={`audit-${selected.id}`} workspaceId={selected.id} L={L} />}</>}
           </section></> : <p>{L("Select a workspace to see its members.")}</p>}
-          <div hidden={activeTab !== "settings"}><details><summary>{L("API credentials")}</summary><ApiCredentials L={L} /></details>
-          <details><summary>{L("Delete account")}</summary><AccountDeletion L={L} onDeleted={() => { setAccount(null); setSpaces([]); setSelectedId(""); setMode("login"); setError(""); setNotice("Account deleted. A new account can be created with the same email."); }} onSessionExpired={() => { setAccount(null); setError(""); setMode("login"); }} /></details></div>
+          <div hidden={activeTab !== "api"}><ApiCredentials L={L} /></div>
+          <div hidden={activeTab !== "settings"}>
+          <details><summary>{L("Delete account")}</summary><AccountDeletion L={L} onDeleted={() => { setAccount(null); setSpaces([]); setSelectedId(""); setMode("login"); setError(""); setNotice("Account deleted. A new account can be created with the same email or username."); }} onSessionExpired={() => { setAccount(null); setError(""); setMode("login"); }} /></details></div>
         </>}
       </section>
     </div>}

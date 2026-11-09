@@ -38,7 +38,7 @@ test('help and version work without credentials and never touch the network',asy
     assert.equal(result.code,0,result.stderr);
     for (const text of [
       'Usage:','hostlet help <command>','HOSTLET_URL','HOSTLET_TOKEN','HOSTLET_SHARE_PASSWORD',
-      'Never pass it on the command line','Remote instances must use HTTPS'
+      'Defaults to https://hostlet.cn','Never pass it on the command line','Remote instances must use HTTPS'
     ]) assert.ok(result.stdout.includes(text),`${args.join(' ')} should mention ${text}`);
     for (const command of commands) assert.ok(result.stdout.includes(`  ${command}`),`help should list ${command}`);
     assert.doesNotMatch(result.stderr,/FETCH_CALLED/);

@@ -385,6 +385,50 @@
   justify-self: start;
 }
 
+.account-portal__api-keys .account-portal__eyebrow {
+  margin-bottom: 8px;
+}
+
+.account-portal__keyguide {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 24px;
+}
+
+.account-portal__keyguide > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+}
+
+.account-portal__keyguide code {
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.account-portal__keyguide span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.account-portal__code {
+  margin: 12px 0 24px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .account-portal__alert,
 .account-portal__notice {
   margin: 0 0 16px;

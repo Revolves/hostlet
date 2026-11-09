@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hostlet · 把作品发布成一个地址</title>
+  <meta name="description" content="Hostlet 是一个轻量的静态应用托管平台。上传 HTML 或 ZIP，获得独立地址、版本历史和访问统计，也可以用 CLI 与 Skill 发布。">
+  <meta name="theme-color" content="#f3f0e7">
+  <meta property="og:title" content="Hostlet · 把作品发布成一个地址">
+  <meta property="og:description" content="上传 HTML 或 ZIP，获得独立地址、版本历史和访问统计。">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2322211f'/%3E%3Cpath d='M18 16h8v12h12V16h8v32h-8V35H26v13h-8z' fill='%23f3f0e7'/%3E%3C/svg%3E">
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="topbar" data-intro>
+    <a class="brand" href="/" aria-label="Hostlet 官网">
+      <span class="brand__mark" aria-hidden="true">H</span>
+      <span>Hostlet</span>
+    </a>
+    <nav class="topbar__nav" aria-label="页面导航">
+      <a href="#flow">发布流程</a>
+      <a href="#capabilities">能力</a>
+      <a href="#cli">CLI / Skill</a>
+      <a href="https://github.com/Revolves" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+    </nav>
+    <a class="topbar__cta" href="/workspace">打开工作台 <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero__copy">
+        <p class="eyebrow" data-intro>开源静态应用托管</p>
+        <h1 data-intro>
+          <span>把作品，</span>
+          <span>发布成一个</span>
+          <em>地址。</em>
+        </h1>
+        <p class="hero__lede" data-intro>上传 HTML 或 ZIP，立刻拥有可分享的独立应用地址。公开、私有、版本回滚与访问统计，都在同一个地方。</p>
+        <div class="hero__actions" data-intro>
+          <a class="button button--ink" href="/workspace">开始发布 <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="/">浏览公开应用 <span aria-hidden="true">→</span></a>
+        </div>
+        <dl class="hero__facts" data-intro>
+          <div><dt>01</dt><dd>一个稳定地址</dd></div>
+          <div><dt>20</dt><dd>个历史版本</dd></div>
+          <div><dt>∞</dt><dd>次分享</dd></div>
+        </dl>
+      </div>
+
+      <div class="orbit" aria-hidden="true" data-intro>
+        <div class="orbit__glow"></div>
+        <div class="orbit__ring orbit__ring--outer"></div>
+        <div class="orbit__ring orbit__ring--middle"></div>
+        <div class="orbit__ring orbit__ring--inner"></div>
+        <span class="orbit__satellite orbit__satellite--one"></span>
+        <span class="orbit__satellite orbit__satellite--two"></span>
+        <div class="orbit__core">
+          <span class="orbit__label">PUBLISHED AT</span>
+          <strong>your-app</strong>
+          <span class="orbit__path">.apps.hostlet.cn</span>
+          <span class="orbit__status"><i></i> online</span>
+        </div>
+        <span class="orbit__note orbit__note--one">HTML</span>
+        <span class="orbit__note orbit__note--two">ZIP</span>
+        <span class="orbit__note orbit__note--three">v1.4</span>
+      </div>
+    </section>
+
+    <section class="tagline" aria-label="Hostlet 的主张">
+      <p data-words>发布，不该比创作更麻烦。</p>
+    </section>
+
+    <section class="flow" id="flow">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">发布流程</p>
+        <h2>三步，作品就有自己的位置。</h2>
+        <p>没有复杂构建，没有服务器配置。你只需要准备好文件。</p>
+      </div>
+      <ol class="flow__list">
+        <li data-reveal>
+          <span class="flow__number">01</span>
+          <div>
+            <h3>选择文件</h3>
+            <p>上传单个 HTML，或包含 CSS、脚本和图片的 ZIP。入口文件会自动识别。</p>
+          </div>
+          <span class="flow__tag">HTML / ZIP</span>
+        </li>
+        <li data-reveal>
+          <span class="flow__number">02</span>
+          <div>
+            <h3>获得地址</h3>
+            <p>应用会得到稳定地址。后续更新不会改变链接，旧版本也会被保留。</p>
+          </div>
+          <span class="flow__tag">your-app.apps.hostlet.cn</span>
+        </li>
+        <li data-reveal>
+          <span class="flow__number">03</span>
+          <div>
+            <h3>决定谁能看见</h3>
+            <p>默认私有。准备好后再公开，或创建可撤销、可设密码的分享链接。</p>
+          </div>
+          <span class="flow__tag">private → public</span>
+        </li>
+      </ol>
+    </section>
+
+    <section class="capabilities" id="capabilities">
+      <div class="section-head section-head--split" data-reveal>
+        <div>
+          <p class="eyebrow">能力</p>
+          <h2>让作品被看见，<br>也保留边界。</h2>
+        </div>
+        <p>Hostlet 只托管静态文件，不运行你的服务端代码。简单，反而让发布这件事更清楚。</p>
+      </div>
+      <div class="capability-grid">
+        <article data-reveal>
+          <span>01</span>
+          <h3>独立地址</h3>
+          <p>每个应用都有自己的稳定入口，更新版本时地址不变。</p>
+        </article>
+        <article data-reveal>
+          <span>02</span>
+          <h3>访问统计</h3>
+          <p>只统计真正打开入口文档的访问，静态资源和预览不会混进数字。</p>
+        </article>
+        <article data-reveal>
+          <span>03</span>
+          <h3>版本历史</h3>
+          <p>保留最多 20 个版本。一次上传失误，不会让上一版消失。</p>
+        </article>
+        <article data-reveal>
+          <span>04</span>
+          <h3>私有分享</h3>
+          <p>默认私有，按需公开。分享链接可以撤销，也可以加密码。</p>
+        </article>
+        <article data-reveal>
+          <span>05</span>
+          <h3>团队空间</h3>
+          <p>个人空间之外，也可以建立团队，按所有者、编辑者和查看者分工。</p>
+        </article>
+        <article data-reveal>
+          <span>06</span>
+          <h3>开放接口</h3>
+          <p>每个用户都能创建自己的 API Key，用 CLI 或 Skill 发布应用。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="cli" id="cli">
+      <div class="cli__copy" data-reveal>
+        <p class="eyebrow">CLI / SKILL</p>
+        <h2>把发布，<br>交给一条命令。</h2>
+        <p>在账户设置里创建 API Key，然后让命令行或 Agent 直接完成上传、替换和版本查询。</p>
+        <ul>
+          <li>官方实例默认使用 <code>https://hostlet.cn</code></li>
+          <li>自建实例通过 <code>HOSTLET_URL</code> 切换</li>
+          <li>Key 只在创建时显示一次，可随时撤销</li>
+        </ul>
+        <a class="text-link text-link--light" href="/workspace">创建我的 API Key <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="terminal" data-reveal>
+        <div class="terminal__bar">
+          <span></span><span></span><span></span>
+          <small>hostlet / publish</small>
+        </div>
+        <pre><code><span class="terminal__muted"># 设置凭据</span>
+export HOSTLET_TOKEN="hlt_..."
+
+<span class="terminal__muted"># 发布一个目录</span>
+hostlet publish ./dist \
+  --workspace WORKSPACE_ID \
+  --title "My portfolio"
+
+<span class="terminal__success">✓</span> private application published
+<span class="terminal__muted">  https://your-app.apps.hostlet.cn</span></code></pre>
+        <button class="copy" type="button" data-copy="#command">复制命令</button>
+        <span class="copy__status" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="closing">
+      <p class="eyebrow" data-reveal>NEXT</p>
+      <h2 data-reveal>下一个地址，<br>留给你的作品。</h2>
+      <div class="closing__actions" data-reveal>
+        <a class="button button--coral" href="/workspace">进入工作台 <span aria-hidden="true">↗</span></a>
+        <a class="text-link" href="/">看看别人的作品 <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>
+      <span class="brand__mark" aria-hidden="true">H</span>
+      <strong>Hostlet</strong>
+      <span>轻量静态应用托管</span>
+    </div>
+    <nav aria-label="页脚">
+      <a href="/">公开目录</a>
+      <a href="https://github.com/Revolves" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <a href="#main">回到顶部 ↑</a>
+    </nav>
+  </footer>
+
+  <template id="command">hostlet publish ./dist --workspace WORKSPACE_ID --title "My portfolio"</template>
+</body>
+</html>

@@ -44,6 +44,9 @@ CREATE INDEX account_tokens_user_purpose ON account_tokens(user_id, purpose);
 const scrypt = promisify(scryptCallback);
 const HASH_OPTIONS = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 const DUMMY_HASH = `scrypt$${'00'.repeat(16)}$${'00'.repeat(64)}`;
+const USERNAME_DOMAIN = 'users.hostlet.invalid';
+const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{1,30}[a-z0-9]$/;
+const RESERVED_USERNAMES = new Set(['admin', 'administrator', 'api', 'app', 'apps', 'help', 'hostlet', 'mail', 'root', 'security', 'status', 'support', 'system', 'www']);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -63,6 +66,46 @@ export function normalizeEmail(value) {
     throw fail('INVALID_EMAIL', 'Invalid email address.');
   }
   return email;
+}
+
+export function normalizeUsername(value) {
+  if (typeof value !== 'string') throw fail('INVALID_USERNAME', 'Invalid username.');
+  const username = value.trim().toLowerCase();
+  if (!USERNAME_PATTERN.test(username) || RESERVED_USERNAMES.has(username)) {
+    throw fail('INVALID_USERNAME', 'Username must be 3 to 32 characters using letters, numbers, underscores or hyphens.');
+  }
+  return username;
+}
+
+export function usernameEmail(username) {
+  return `${normalizeUsername(username)}@${USERNAME_DOMAIN}`;
+}
+
+export function usernameFromEmail(email) {
+  if (typeof email !== 'string') return null;
+  const suffix = `@${USERNAME_DOMAIN}`;
+  if (!email.endsWith(suffix)) return null;
+  try { return normalizeUsername(email.slice(0, -suffix.length)); }
+  catch { return null; }
+}
+
+export function resolveAccountEmail(input) {
+  if (typeof input === 'string') {
+    const value = input.trim();
+    if (!value) throw fail('INVALID_EMAIL', 'Invalid account identifier.');
+    return value.includes('@') ? normalizeEmail(value) : usernameEmail(value);
+  }
+  if (input && typeof input === 'object') {
+    if (typeof input.email === 'string' && input.email.trim()) return normalizeEmail(input.email);
+    if (typeof input.username === 'string' && input.username.trim()) return usernameEmail(input.username);
+    if (typeof input.identifier === 'string' && input.identifier.trim()) return resolveAccountEmail(input.identifier);
+  }
+  throw fail('INVALID_EMAIL', 'Invalid account identifier.');
+}
+
+export function accountView(user) {
+  if (!user || typeof user.id !== 'string' || typeof user.email !== 'string') return null;
+  return { id: user.id, email: user.email, username: user.username ?? usernameFromEmail(user.email) };
 }
 
 function validatePassword(password) {
@@ -128,29 +171,35 @@ export function createAccounts({ db, sender, now = Date.now, verificationTtlMs =
     }
   }
 
-  async function register({ email, password }, { onReady } = {}) {
+  async function register({ email, username, password }, { onReady } = {}) {
     if (onReady !== undefined && typeof onReady !== 'function') throw new TypeError('Invalid registration callback.');
-    email = normalizeEmail(email);
+    if (email !== undefined && username !== undefined) throw fail('INVALID_EMAIL', 'Choose an email or a username.');
+    const normalizedUsername = username === undefined ? null : normalizeUsername(username);
+    email = normalizedUsername ? usernameEmail(normalizedUsername) : normalizeEmail(email);
+    if (!normalizedUsername && email.endsWith(`@${USERNAME_DOMAIN}`)) {
+      throw fail('INVALID_EMAIL', 'This email domain is reserved for username accounts.');
+    }
     validatePassword(password);
     const passwordHash = await hashPassword(password);
-    const user = { id: randomUUID(), email };
+    const user = { id: randomUUID(), email, username: normalizedUsername };
     const message = transaction(db, () => {
       if (find.get(email)) throw fail('EMAIL_EXISTS', 'Email is already registered.');
       const time = now();
       const workspaceId = randomUUID();
       const workspaceCreatedAt = new Date(time).toISOString();
-      db.prepare('INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)').run(user.id, email, passwordHash, time);
+      db.prepare('INSERT INTO users (id, email, password_hash, email_verified_at, created_at) VALUES (?, ?, ?, ?, ?)').run(user.id, email, passwordHash, normalizedUsername ? time : null, time);
       db.prepare("INSERT INTO workspaces (id, name, type, created_by, created_at) VALUES (?, 'Personal', 'personal', ?, ?)").run(workspaceId, user.id, workspaceCreatedAt);
       db.prepare("INSERT INTO workspace_members (workspace_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)").run(workspaceId, user.id, workspaceCreatedAt);
-      return issue(user, 'verify', verificationTtlMs);
+      return normalizedUsername ? null : issue(user, 'verify', verificationTtlMs);
     });
     onReady?.();
-    await send(message);
+    if (message) await send(message);
     return user;
   }
 
   async function sendVerification({ email }) {
     email = normalizeEmail(email);
+    if (usernameFromEmail(email)) return;
     const message = transaction(db, () => {
       const user = find.get(email);
       return user && user.email_verified_at === null ? issue(user, 'verify', verificationTtlMs) : null;
@@ -171,17 +220,19 @@ export function createAccounts({ db, sender, now = Date.now, verificationTtlMs =
     });
   }
 
-  async function authenticate({ email, password }) {
+  async function authenticate(input) {
+    const password = input?.password;
     let normalized;
-    try { normalized = normalizeEmail(email); } catch { normalized = ''; }
+    try { normalized = resolveAccountEmail(input); } catch { normalized = ''; }
     const user = find.get(normalized);
     const valid = await checkPassword(password, user?.password_hash ?? DUMMY_HASH);
     if (!valid || !user || user.email_verified_at === null) return null;
-    return { id: user.id, email: user.email };
+    return { id: user.id, email: user.email, username: usernameFromEmail(user.email) };
   }
 
   async function requestPasswordReset({ email }) {
     email = normalizeEmail(email);
+    if (usernameFromEmail(email)) return;
     const message = transaction(db, () => {
       const user = find.get(email);
       return user && user.email_verified_at !== null ? issue(user, 'reset', resetTtlMs) : null;

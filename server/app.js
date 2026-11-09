@@ -96,6 +96,7 @@ const CONTENT_TYPES = {
   ".woff2": "font/woff2",
   ".xml": "application/xml; charset=utf-8",
 };
+const FONT_EXTENSIONS = new Set([".eot", ".otf", ".ttf", ".woff", ".woff2"]);
 
 function asyncRoute(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
@@ -581,6 +582,9 @@ function createPagesApp({ config, pages, pageLogin, workspaceHostingRouter, main
     const extension = path.extname(finalPath).toLowerCase();
     res.type(CONTENT_TYPES[extension] || "application/octet-stream");
     res.setHeader("Cache-Control", "no-cache");
+    if (FONT_EXTENSIONS.has(extension)) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    }
     if (extension === ".html" || extension === ".htm") {
       res.setHeader("Content-Security-Policy", "sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads");
       if (accessToken) {
@@ -625,7 +629,14 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
   });
   const services = createServices({ config, db, clock });
   await services.storage.ensure();
-  if (!accountSender && config.multiuserEnabled) accountSender = createMailer(config.smtp);
+  if (!accountSender && config.multiuserEnabled && config.smtp) accountSender = createMailer(config.smtp);
+  const emailRegistrationEnabled = Boolean(accountSender) || config.emailRegistrationEnabled === true ||
+    (config.emailRegistrationEnabled === undefined && Boolean(config.smtp));
+  const mailSender = accountSender || (async () => {
+    const error = new Error('Email delivery is unavailable.');
+    error.code = 'MAIL_FAILED';
+    throw error;
+  });
   let workspaceHostingRouter = null;
   let platformAdmin = null;
   let retentionCoordinator = null, retentionScheduler = null, ephemeralCleanupScheduler = null;
@@ -669,8 +680,19 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
     }
     next();
   });
-  const registrationEnabled = () => Boolean(!config.ipHosting && accountSender && (platformAdmin && db.prepare("SELECT 1 FROM platform_settings WHERE id=1").get() ? platformAdmin.getSettings().registrationEnabled : config.registrationEnabled));
-  admin.get("/api/features", (_req, res) => res.json({ multiuser: Boolean(accountSender), registration: registrationEnabled(), hostingDomain: accountSender ? hostingConfig?.appDomain || null : null, ipHostingOrigin: accountSender ? config.ipHosting?.contentOrigin || null : null, retention: platformAdmin ? platformAdmin.getSettings().retention : {mode:'long-term',days:null,notifyBeforeDays:null}, retentionActive: Boolean(retentionScheduler?.isRunning()) }));
+  const accountsEnabled = () => Boolean(accountSender || config.multiuserEnabled);
+  const registrationEnabled = () => Boolean(!config.ipHosting && accountsEnabled() && (platformAdmin && db.prepare("SELECT 1 FROM platform_settings WHERE id=1").get() ? platformAdmin.getSettings().registrationEnabled : config.registrationEnabled));
+  admin.get("/api/features", (_req, res) => res.json({
+    multiuser: accountsEnabled(),
+    registration: registrationEnabled(),
+    registrationMethods: { email: emailRegistrationEnabled, username: config.usernameRegistrationEnabled === true },
+    singleDomainHosting: config.singleDomainHosting === true,
+    hostingDomain: accountsEnabled() ? hostingConfig?.appDomain || null : null,
+    ipHostingOrigin: accountsEnabled() ? config.ipHosting?.contentOrigin || null : null,
+    github: config.publicGithub,
+    retention: platformAdmin ? platformAdmin.getSettings().retention : {mode:'long-term',days:null,notifyBeforeDays:null},
+    retentionActive: Boolean(retentionScheduler?.isRunning()),
+  }));
   admin.get("/api/public/apps", (req, res) => {
     res.set("Cache-Control", "no-store");
     try {
@@ -679,15 +701,15 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       res.status(400).json({ error: "Invalid public directory query.", code: "INVALID_QUERY" });
     }
   });
-  if (accountSender) {
+  if (accountsEnabled()) {
     ephemeralCleanupScheduler=createRetentionScheduler({coordinator:createEphemeralCleanup({db}),intervalMs:60000,
       onResult:()=>operationsStatus.record('temporaryCleanup',true),
       onError:()=>{operationsStatus.record('temporaryCleanup',false);console.error('Expired temporary records cleanup failed; check database health.');}});
     const accounts = createAccounts({ db, sender: async message => {
-      try { await accountSender(message); operationsStatus.record('accountMail',true); }
+      try { await mailSender(message); operationsStatus.record('accountMail',true); }
       catch (error) { operationsStatus.record('accountMail',false); throw error; }
     } });
-    const sessions = createAccountSessions({ db, secure: config.secureCookies, ...(config.ipHosting ? {cookieName:IP_ACCOUNT_COOKIE} : {}) });
+    const sessions = createAccountSessions({ db, secure: config.secureCookies, ...(config.ipHosting || config.singleDomainHosting ? {cookieName:IP_ACCOUNT_COOKIE} : {}) });
     const apiCredentials = createApiCredentials({db});
     const requireUser = (req, res, next) => sessions.requireSession(req, res, () => { req.user = req.account; next(); });
     const workspaceService = createWorkspaceService(db);
@@ -742,6 +764,8 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       sessions,
       allowedOrigins: config.allowedOrigins,
       registrationEnabled,
+      emailRegistrationEnabled,
+      usernameRegistrationEnabled: config.usernameRegistrationEnabled === true,
       deleteAccount,
       accountDeletionStatus: accountDeletion.status,
       apiCredentials,
@@ -785,7 +809,7 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
         const getSettings = platformAdmin.getSettings;
         platformAdmin.getSettings = () => ({...getSettings(),registrationEnabled:false});
       }
-      const sender = retentionSender ?? accountSender.sendRetention;
+      const sender = retentionSender ?? accountSender?.sendRetention;
       let retentionDiagnostics=null;
       if (sender !== undefined) {
         if (typeof sender !== 'function') throw new TypeError('Invalid retention sender');

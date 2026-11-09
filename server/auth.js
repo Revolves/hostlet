@@ -12,7 +12,8 @@ export function passwordMatches(candidate, expected) {
 
 export function createAuth({ config, sessions }) {
   const limiter = new FailureLimiter();
-  const cookieName = config.ipHosting ? IP_ADMIN_COOKIE : ADMIN_COOKIE;
+  const hardenedCookie = Boolean(config.ipHosting || config.singleDomainHosting);
+  const cookieName = hardenedCookie ? IP_ADMIN_COOKIE : ADMIN_COOKIE;
 
   function adminCookie(req) {
     const matches = String(req.headers?.cookie || '').split(';').map(value => value.trim()).filter(value => value.startsWith(`${cookieName}=`));
@@ -23,9 +24,16 @@ export function createAuth({ config, sessions }) {
     return {
       httpOnly: true,
       sameSite: "strict",
-      secure: config.ipHosting ? true : config.secureCookies,
-      path: config.ipHosting ? "/" : "/api",
+      secure: hardenedCookie ? true : config.secureCookies,
+      path: hardenedCookie ? "/" : "/api",
     };
+  }
+
+  function clearLegacyCookies(res) {
+    if (!hardenedCookie) return;
+    for (const path of ["/api", "/"]) {
+      res.clearCookie(ADMIN_COOKIE, { httpOnly: true, sameSite: "strict", secure: true, path });
+    }
   }
 
   function login(req, res) {
@@ -46,11 +54,13 @@ export function createAuth({ config, sessions }) {
       ...cookieOptions(),
       maxAge: config.sessionTtlMs,
     });
+    clearLegacyCookies(res);
     return res.json({ authenticated: true });
   }
 
   function logout(req, res) {
     sessions.delete(adminCookie(req));
+    clearLegacyCookies(res);
     res.clearCookie(cookieName, cookieOptions());
     return res.json({ authenticated: false });
   }

@@ -13,7 +13,7 @@ export default function LoginView({ onLogin }) {
   const passwordRef = useRef(null);
 
   useEffect(() => {
-    passwordRef.current?.focus();
+    passwordRef.current?.focus({ preventScroll: true });
     let cancelled = false;
     fetch("/api/features")
       .then((response) => response.ok ? response.json() : null)
@@ -80,6 +80,7 @@ export default function LoginView({ onLogin }) {
           </div>
 
           <form className="login__form" onSubmit={handleSubmit}>
+            <input type="text" name="username" value="admin" autoComplete="username" readOnly hidden />
             <label className="field">
               <span className="field__label">{t("Password")}</span>
               <input

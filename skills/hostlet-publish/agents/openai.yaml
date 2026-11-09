@@ -1,0 +1,6 @@
+interface:
+  display_name: "Hostlet Publish"
+  short_description: "Publish private static sites with Hostlet CLI"
+  default_prompt: "Use $hostlet-publish to publish this static site to Hostlet as a private application."
+policy:
+  allow_implicit_invocation: true

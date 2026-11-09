@@ -57,6 +57,9 @@ test('private hosting authenticates every request and confines app credentials a
   assert.throws(() => createWorkspaceHostingService({db, storageRoot:root, appDomain:'apps.example.test', managementOrigin:'https://admin.example.test'}), /origin/i);
   assert.throws(() => createWorkspaceHostingService({db, storageRoot:root, appDomain:'apps.example.co.uk', managementOrigin:'https://admin.example.co.uk'}), /origin/i);
   assert.throws(() => createWorkspaceHostingService({db, storageRoot:root, appDomain:'apps.example.test:99999', managementOrigin:'https://manage.hostlet.test'}), /domain/i);
+  assert.doesNotThrow(() => createWorkspaceHostingService({db, storageRoot:root, appDomain:'apps.example.test', managementOrigin:'https://admin.example.test', allowSameSite:true}));
+  assert.throws(() => createWorkspaceHostingService({db, storageRoot:root, appDomain:'example.test', managementOrigin:'https://admin.example.test', allowSameSite:true}), /origin/i);
+  assert.throws(() => createWorkspaceHostingService({db, storageRoot:root, appDomain:'apps.example.test', managementOrigin:'https://admin.example.test', allowSameSite:'yes'}), /configuration/i);
   let publicAccess=false, suspended=false;
   const service = createWorkspaceHostingService({db, storageRoot:root, appDomain:'apps.example.test', managementOrigin:'https://manage.hostlet.test', now:()=>time, ticketTtlMs:30000, sessionTtlMs:60000,
     publicPage:id => publicAccess ? db.prepare('SELECT * FROM workspace_pages WHERE id=?').get(id) : null, isSuspended:()=>suspended});

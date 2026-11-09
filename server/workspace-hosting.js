@@ -46,10 +46,12 @@ const safeHeaders = res => res.set({
  * Its cookies and sessions are separate from member sessions. Each resource
  * rechecks both credentials against their respective services. The caller must
  * rate-limit exchange and redact bodies, cookies and responses. Previously
- * downloaded content cannot be recalled.
+ * downloaded content cannot be recalled. allowSameSite is an explicit demo-mode
+ * opt-in; production deployments should keep management and applications on
+ * separate registrable domains.
  */
-export function createWorkspaceHostingService({ db, storageRoot, appDomain, managementOrigin, isSuspended = () => false, publicPage = () => null, now = Date.now, ticketTtlMs = 30000, sessionTtlMs = 300000 }) {
-  if (!db || db.prepare('PRAGMA foreign_keys').get().foreign_keys !== 1 || !path.isAbsolute(storageRoot || '') || typeof now !== 'function' || typeof isSuspended !== 'function' || typeof publicPage !== 'function' || !Number.isSafeInteger(ticketTtlMs) || ticketTtlMs < 1000 || ticketTtlMs > 120000 || !Number.isSafeInteger(sessionTtlMs) || sessionTtlMs < 1000 || sessionTtlMs > 3600000) throw new TypeError('Invalid hosting configuration');
+export function createWorkspaceHostingService({ db, storageRoot, appDomain, managementOrigin, allowSameSite = false, isSuspended = () => false, publicPage = () => null, now = Date.now, ticketTtlMs = 30000, sessionTtlMs = 300000 }) {
+  if (!db || db.prepare('PRAGMA foreign_keys').get().foreign_keys !== 1 || !path.isAbsolute(storageRoot || '') || typeof allowSameSite !== 'boolean' || typeof now !== 'function' || typeof isSuspended !== 'function' || typeof publicPage !== 'function' || !Number.isSafeInteger(ticketTtlMs) || ticketTtlMs < 1000 || ticketTtlMs > 120000 || !Number.isSafeInteger(sessionTtlMs) || sessionTtlMs < 1000 || sessionTtlMs > 3600000) throw new TypeError('Invalid hosting configuration');
   if (typeof appDomain !== 'string' || !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?::[0-9]{1,5})?$/.test(appDomain)) throw new TypeError('Invalid app domain');
   const [appDns,appPort] = appDomain.split(':');
   if (appDns.length > 218 || (appPort !== undefined && (Number(appPort) < 1 || Number(appPort) > 65535))) throw new TypeError('Invalid app domain');
@@ -59,7 +61,9 @@ export function createWorkspaceHostingService({ db, storageRoot, appDomain, mana
   if (origin.protocol !== 'https:' || origin.origin !== managementOrigin || origin.username || origin.password || origin.hostname === appDns || origin.hostname.endsWith('.' + appDns)) throw new TypeError('Invalid management origin');
   const appSite = getDomain(appDns, { allowPrivateDomains: true });
   const managementSite = getDomain(origin.hostname, { allowPrivateDomains: true });
-  if (!appSite || !managementSite || appSite === managementSite) throw new TypeError('Invalid management origin: applications require a separate registrable domain');
+  if (!appSite || !managementSite || (appSite === managementSite && allowSameSite !== true)) {
+    throw new TypeError('Invalid management origin: applications require a separate registrable domain unless same-site hosting is explicitly enabled');
+  }
   return createHostingCore({db,storageRoot,appDomain,managementOrigin,isSuspended,publicPage,now,ticketTtlMs,sessionTtlMs});
 }
 

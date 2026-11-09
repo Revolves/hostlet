@@ -12,6 +12,7 @@ import {
   statementTokens,
   visitLabel,
 } from "../../shared/public-site.js";
+import { hostingConfig } from "./hosting-address.js";
 import "./public-home.css";
 
 const toneNames = ["editorial", "studio", "archive", "signal"];
@@ -84,6 +85,14 @@ function Mark() {
   return <span className="public-mark" aria-hidden="true"><span>H</span></span>;
 }
 
+function GitHubMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 .8a11.4 11.4 0 0 0-3.6 22.2c.6.1.8-.2.8-.5v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.4-1.3-5.4-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.8 5.5-5.4 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.4 11.4 0 0 0 12 .8Z" />
+    </svg>
+  );
+}
+
 function Count({ value, locale, unavailable }) {
   const text = value === null || value === undefined ? "—" : formatPublicNumber(value, locale);
   return <span className="public-count" aria-label={text === "—" ? unavailable : text}>{text}</span>;
@@ -126,6 +135,7 @@ export default function PublicHome() {
   const copy = publicCopy[locale] || publicCopy["zh-CN"];
   const [apps, setApps] = useState([]);
   const [stats, setStats] = useState(null);
+  const [features, setFeatures] = useState(null);
   const [page, setPage] = useState({ limit: PUBLIC_PAGE_SIZE, offset: 0, total: 0, hasMore: false });
   const [state, setState] = useState("loading");
   const [query, setQuery] = useState(initialQuery);
@@ -147,6 +157,21 @@ export default function PublicHome() {
     return () => {
       document.documentElement.classList.remove("public-site-document");
       document.body.classList.remove("public-site-document");
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/features", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((value) => {
+        if (active) setFeatures(value);
+      })
+      .catch(() => {
+        if (active) setFeatures(null);
+      });
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -292,6 +317,9 @@ export default function PublicHome() {
   const resultSummary = state === "ready" && page.total > 0
     ? interpolate(copy.showcase.resultCount, { count: formatPublicNumber(page.total, locale) })
     : "";
+  const accountEnabled = features?.multiuser === true;
+  const reportEnabled = accountEnabled && Boolean(hostingConfig(features));
+  const github = features?.github?.url ? features.github : null;
 
   return (
     <div className="public-site">
@@ -418,6 +446,24 @@ export default function PublicHome() {
           </ol>
         </section>
 
+        {github ? (
+          <section className="public-source" id="source" aria-labelledby="source-title" data-reveal>
+            <div className="public-source__intro">
+              <p className="public-eyebrow"><span />{copy.source.eyebrow}</p>
+              <h2 id="source-title">{copy.source.title}</h2>
+              <p>{copy.source.description}</p>
+            </div>
+            <a className="public-source__link" href={github.url} target="_blank" rel="noopener noreferrer" aria-label={`${copy.source.action}: ${github.label}`}>
+              <span className="public-source__icon"><GitHubMark /></span>
+              <span className="public-source__identity">
+                <small>{copy.source.action}</small>
+                <strong>{github.label}</strong>
+              </span>
+              <span className="public-source__arrow" aria-hidden="true">↗</span>
+            </a>
+          </section>
+        ) : null}
+
         <section className="public-cta" data-reveal>
           <div>
             <h2>{copy.cta.title}</h2>
@@ -429,7 +475,11 @@ export default function PublicHome() {
 
       <footer className="public-footer">
         <div><Mark /><span>{copy.footer.note}</span></div>
-        <nav aria-label={copy.a11y.footerNav}><a href="/workspace">{copy.footer.workspace}</a><a href="/account">{copy.footer.account}</a><a href="/report">{copy.footer.report}</a></nav>
+        <nav aria-label={copy.a11y.footerNav}>
+          <a href="/workspace">{copy.footer.workspace}</a>
+          {accountEnabled ? <a href="/account">{copy.footer.account}</a> : null}
+          {reportEnabled ? <a href="/report">{copy.footer.report}</a> : null}
+        </nav>
       </footer>
     </div>
   );

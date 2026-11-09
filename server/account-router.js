@@ -1,4 +1,5 @@
 import express from 'express';
+import { accountView } from './accounts.js';
 
 /**
  * Mount at a dedicated prefix, e.g. app.use('/api/account', router).
@@ -12,8 +13,9 @@ import express from 'express';
  * for multiple processes, and log redaction of request bodies, cookies and mail links.
  * Sender receives plaintext tokens and must deliver links without exposing them in logs.
  */
-export function createAccountRouter({ accounts, sessions, allowedOrigins, registrationEnabled = false, rateLimit = {}, deleteAccount, accountDeletionStatus, apiCredentials }) {
+export function createAccountRouter({ accounts, sessions, allowedOrigins, registrationEnabled = false, emailRegistrationEnabled = true, usernameRegistrationEnabled = false, rateLimit = {}, deleteAccount, accountDeletionStatus, apiCredentials }) {
   if (!accounts || !sessions || !Array.isArray(allowedOrigins) || !allowedOrigins.length || !['boolean', 'function'].includes(typeof registrationEnabled)) throw new TypeError('Invalid account router configuration.');
+  if (typeof emailRegistrationEnabled !== 'boolean' || typeof usernameRegistrationEnabled !== 'boolean') throw new TypeError('Invalid registration method configuration.');
   if (deleteAccount !== undefined && typeof deleteAccount !== 'function') throw new TypeError('Invalid account deletion callback.');
   if (accountDeletionStatus !== undefined && typeof accountDeletionStatus !== 'function') throw new TypeError('Invalid account deletion status callback.');
   for (const origin of allowedOrigins) {
@@ -51,7 +53,7 @@ export function createAccountRouter({ accounts, sessions, allowedOrigins, regist
     try { await fn(req,res); }
     catch (error) {
       if (res.headersSent) { console.error('Account operation failed after response.'); return; }
-      if (['INVALID_EMAIL','INVALID_PASSWORD'].includes(error?.code)) return res.status(400).json({error:'Invalid account details.'});
+      if (['INVALID_EMAIL','INVALID_USERNAME','INVALID_PASSWORD'].includes(error?.code)) return res.status(400).json({error:'Invalid account details.'});
       return res.status(500).json({error:'Request could not be completed.'});
     }
     finally { concurrent--; release(); }
@@ -86,7 +88,25 @@ export function createAccountRouter({ accounts, sessions, allowedOrigins, regist
   };
   router.post('/register', handler(async (req,res) => {
     if (!(typeof registrationEnabled === 'function' ? registrationEnabled() === true : registrationEnabled)) return res.status(403).json({error:'Registration is disabled.'});
-    try { await accounts.register(req.body || {}, {onReady:()=>neutral(res)}); }
+    const body = req.body || {};
+    const usernameRegistration = typeof body.username === 'string' ||
+      (typeof body.identifier === 'string' && !body.identifier.includes('@'));
+    if (usernameRegistration) {
+      if (!usernameRegistrationEnabled) return res.status(403).json({ error: 'Username registration is disabled.', code: 'USERNAME_REGISTRATION_DISABLED' });
+      let user;
+      try { user = await accounts.register({ username: body.username ?? body.identifier, password: body.password }); }
+      catch (error) {
+        if (error?.code === 'EMAIL_EXISTS') return res.status(409).json({ error: 'That username is already taken.', code: 'ACCOUNT_EXISTS' });
+        throw error;
+      }
+      const before = sessions.snapshot(user.email);
+      const token = sessions.create(user, before);
+      if (!token) return res.status(500).json({ error: 'Request could not be completed.' });
+      sessions.setCookie(res, token);
+      return res.status(201).json({ account: accountView(user) });
+    }
+    if (!emailRegistrationEnabled) return res.status(403).json({ error: 'Email registration is disabled.', code: 'EMAIL_REGISTRATION_DISABLED' });
+    try { await accounts.register({ email: body.email ?? body.identifier, password: body.password }, {onReady:()=>neutral(res)}); }
     catch (error) { if (!['EMAIL_EXISTS','MAIL_FAILED'].includes(error?.code)) throw error; }
     if (!res.headersSent) return neutral(res);
   }));
@@ -96,12 +116,12 @@ export function createAccountRouter({ accounts, sessions, allowedOrigins, regist
   }));
   router.post('/resend-verification', recovery(body => accounts.sendVerification(body)));
   router.post('/login', handler(async (req,res) => {
-    const before = sessions.snapshot(req.body?.email);
+    const before = sessions.snapshot(req.body);
     const user = await accounts.authenticate(req.body || {});
     const token = user && sessions.create(user, before);
     if (!token) return res.status(401).json({error:'Invalid credentials or account unavailable.'});
     sessions.setCookie(res,token);
-    return res.json({account:{id:user.id,email:user.email}});
+    return res.json({account:accountView(user)});
   }));
   router.post('/logout', handler(async (req,res) => { sessions.logout(req,res); return res.json({authenticated:false}); }));
   router.post('/forgot-password', recovery(body => accounts.requestPasswordReset(body)));
@@ -152,7 +172,7 @@ export function createAccountRouter({ accounts, sessions, allowedOrigins, regist
     sessions.logout(req,res);
     return res.sendStatus(204);
   }));
-  router.get('/me', (req,res) => { const user = sessions.find(req); res.json({account:user ? {id:user.id,email:user.email} : null}); });
+  router.get('/me', (req,res) => { const user = sessions.find(req); res.json({account:accountView(user)}); });
   router.use((err,req,res,next) => { if (res.headersSent) return next(err); return res.status(err?.status === 413 ? 413 : 400).json({error:'Invalid request.'}); });
   return router;
 }

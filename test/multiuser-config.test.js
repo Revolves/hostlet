@@ -50,6 +50,32 @@ test('single IP hosting requires explicit TLS origins, one IP, distinct ports an
   ]) assert.throws(() => loadConfig({...env,...overrides}), /IP|origin|registration|REGISTRATION|COOKIE|MULTIUSER|APPS_DOMAIN/i);
 });
 
+test('single-domain hosting requires an explicit same-site opt-in and a subdomain', () => {
+  const env = {
+    ...base,
+    MULTIUSER_ENABLED: 'true',
+    USERNAME_REGISTRATION_ENABLED: 'true',
+    REGISTRATION_ENABLED: 'true',
+    ADMIN_ORIGIN: 'https://hostlet.cn',
+    COOKIE_SECURE: 'true',
+    APPS_DOMAIN: 'apps.hostlet.cn',
+    SINGLE_DOMAIN_HOSTING: 'true',
+  };
+  const configured = loadConfig(env);
+  assert.equal(configured.singleDomainHosting, true);
+  assert.deepEqual(configured.hosting, { appDomain: 'apps.hostlet.cn', managementOrigin: 'https://hostlet.cn', allowSameSite: true });
+
+  for (const overrides of [
+    { SINGLE_DOMAIN_HOSTING: 'false' },
+    { COOKIE_SECURE: 'false' },
+    { APPS_DOMAIN: 'hostlet.cn' },
+    { APPS_DOMAIN: 'apps.example.org' },
+    { APPS_DOMAIN: 'apps.hostlet.cn:8443' },
+    { ADMIN_ORIGIN: 'http://hostlet.cn' },
+    { MULTIUSER_ENABLED: 'false' },
+  ]) assert.throws(() => loadConfig({ ...env, ...overrides }), /SINGLE_DOMAIN_HOSTING|APPS_DOMAIN|COOKIE_SECURE|ADMIN_ORIGIN|MULTIUSER_ENABLED|registrable|subdomain/i);
+});
+
 test('unsafe single IP registration fails before opening the data directory', t => {
   const root=mkdtempSync(path.join(tmpdir(),'hostlet-ip-config-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
   const dataDir=path.join(root,'data');

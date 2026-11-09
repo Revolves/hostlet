@@ -235,6 +235,7 @@ test("extracts ZIP sites and serves nested assets with safe content types", asyn
   zip.file("bundle/index.html", "<link rel='stylesheet' href='assets/site.css'><h1>Zip site</h1>");
   zip.file("bundle/assets/site.css", "body { color: rgb(1, 2, 3); }");
   zip.file("bundle/assets/pixel.png", Buffer.from([137, 80, 78, 71]));
+  zip.file("bundle/assets/site.woff2", Buffer.from([119, 79, 70, 50]));
   const archive = await zip.generateAsync({ type: "nodebuffer" });
 
   const form = new FormData();
@@ -258,7 +259,13 @@ test("extracts ZIP sites and serves nested assets with safe content types", asyn
   const css = await fetch(`${app.pages}/p/zip-site/assets/site.css`);
   assert.equal(css.status, 200);
   assert.match(css.headers.get("content-type"), /text\/css/);
+  assert.equal(css.headers.get("access-control-allow-origin"), null);
   assert.match(await css.text(), /rgb\(1, 2, 3\)/);
+
+  const font = await fetch(`${app.pages}/p/zip-site/assets/site.woff2`);
+  assert.equal(font.status, 200);
+  assert.match(font.headers.get("content-type"), /font\/woff2/);
+  assert.equal(font.headers.get("access-control-allow-origin"), "*");
 });
 test("private ZIP assets stay available through a signed token path", async (t) => {
   const app = await setup(t);

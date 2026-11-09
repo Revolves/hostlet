@@ -14,6 +14,19 @@ import {
 } from "./route-guards.jsx";
 import { isAccountFlowPath } from "./routing.js";
 
+if ("scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
+function resetInitialScroll() {
+  if (!window.location.hash) {
+    window.scrollTo(0, 0);
+  }
+}
+
+requestAnimationFrame(resetInitialScroll);
+window.addEventListener("load", resetInitialScroll, { once: true });
+
 function renderRoute() {
   const pathname = window.location.pathname;
   if (pathname === "/") return <PublicHome />;

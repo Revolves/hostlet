@@ -25,9 +25,12 @@ globalThis.fetch=async (url,options)=>{
   const body=method==='GET' ? process.env.PREFLIGHT_BODY || process.env.RESPONSE_BODY || '{"status":"not_found"}' : process.env.RESPONSE_BODY || JSON.stringify({page:{id:'page',releaseId:'release'}});
   return new Response(body,{status:Number(status),headers:{'content-type':process.env.CONTENT_TYPE || 'application/json',...(method==='POST' && process.env.REPLAYED ? {'Idempotency-Replayed':process.env.REPLAYED} : {})}});
 };`);
-  async function run(args,extra={}) {
+  async function run(args,extra={},options={}) {
     const capture=path.join(dir,`capture-${Math.random()}.json`);
-    const child=spawn(process.execPath,['--no-warnings','--import',pathToFileURL(mock).href,'cli/hostlet.js',...args],{cwd:process.cwd(),env:{...process.env,HOSTLET_URL:'https://example.test',HOSTLET_TOKEN:token,CAPTURE:capture,...extra}});
+    const env={...process.env,HOSTLET_TOKEN:token,CAPTURE:capture,...extra};
+    if (options.url === null) delete env.HOSTLET_URL;
+    else env.HOSTLET_URL=options.url || 'https://example.test';
+    const child=spawn(process.execPath,['--no-warnings','--import',pathToFileURL(mock).href,'cli/hostlet.js',...args],{cwd:process.cwd(),env});
     let stdout='',stderr=''; child.stdout.on('data',v=>stdout+=v);child.stderr.on('data',v=>stderr+=v);
     const code=await new Promise(resolve=>child.on('close',resolve));
     const requests=await fs.readFile(capture,'utf8').then(s=>s.trim().split('\n').map(JSON.parse),()=>[]);
@@ -37,6 +40,21 @@ globalThis.fetch=async (url,options)=>{
   }
   return {dir,run};
 }
+
+test('workspaces uses the official Hostlet address when HOSTLET_URL is omitted',async t=>{
+  const {run}=await fixture(t);
+  const result=await run(['workspaces','--json'],{RESPONSE_BODY:'[]'},{url:null});
+  assert.equal(result.code,0,result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout),[]);
+  assert.equal(result.request.url,'https://hostlet.cn/api/cli/workspaces');
+});
+
+test('workspaces honors a custom Hostlet address',async t=>{
+  const {run}=await fixture(t);
+  const result=await run(['workspaces','--json'],{RESPONSE_BODY:'[]'},{url:'https://hostlet.example.com'});
+  assert.equal(result.code,0,result.stderr);
+  assert.equal(result.request.url,'https://hostlet.example.com/api/cli/workspaces');
+});
 
 test('publish sends a receipt before upload and hashes the exact file bytes',async t=>{
   const {dir,run}=await fixture(t), file=path.join(dir,'index.html');

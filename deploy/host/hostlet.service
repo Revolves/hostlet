@@ -1,0 +1,29 @@
+[Unit]
+Description=Hostlet static application host
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hostlet
+Group=hostlet
+WorkingDirectory=/opt/hostlet/app
+EnvironmentFile=/etc/hostlet/hostlet.env
+ExecStart=/opt/node22/bin/node server/index.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=90
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/lib/hostlet
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

@@ -6,6 +6,7 @@ import {createRequire} from 'node:module';
 import JSZip from 'jszip';
 
 const {version}=createRequire(import.meta.url)('./package.json');
+const DEFAULT_HOSTLET_URL='https://hostlet.cn';
 const commands=new Map([
   ['workspaces',{
     summary:'List workspaces available to the credential.',
@@ -154,7 +155,7 @@ function generalHelp() {
   lines.push(
     '',
     'Environment:',
-    '  HOSTLET_URL             Management origin, for example https://hostlet.example.com',
+    `  HOSTLET_URL             Optional management origin. Defaults to ${DEFAULT_HOSTLET_URL}`,
     '  HOSTLET_TOKEN           43-character API credential. Never pass it on the command line.',
     '  HOSTLET_SHARE_PASSWORD  Optional share password; prefer --password-stdin.',
     '',
@@ -300,8 +301,8 @@ async function main() {
     return;
   }
   if (rest.includes('--help') || rest.includes('-h')) {output(`${commandHelp(command)}\n`);return;}
-  const token=process.env.HOSTLET_TOKEN, raw=process.env.HOSTLET_URL;
-  if (!/^[A-Za-z0-9_-]{43}$/.test(token || '') || !raw) throw new Error(`${usage}\nSet HOSTLET_URL and HOSTLET_TOKEN. ${helpHint}`);
+  const token=process.env.HOSTLET_TOKEN, raw=process.env.HOSTLET_URL || DEFAULT_HOSTLET_URL;
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token || '')) throw new Error(`${usage}\nSet HOSTLET_TOKEN. ${helpHint}`);
   const base=new URL(raw);
   if (base.username || base.password || base.pathname!=='/' || base.search || base.hash || !(base.protocol==='https:' || base.protocol==='http:' && ['localhost','127.0.0.1','[::1]'].includes(base.hostname))) throw new Error('HOSTLET_URL must be an HTTPS origin (HTTP is allowed only for loopback testing).');
   if (command==='workspaces' && (rest.length===0 || rest.length===1 && rest[0]==='--json')) {

@@ -17,9 +17,13 @@ function assertCookie(cookie, name, secure, path) {
 }
 
 test('admin cookies use the mode-specific name for issuance, reading and logout', () => {
-  for (const [ipHosting, name, secure, path] of [[{}, '__Host-hostlet_admin', true, '/'], [null, 'hostlet_admin', false, '/api']]) {
+  for (const [mode, name, secure, path] of [
+    [{ ipHosting: {} }, '__Host-hostlet_admin', true, '/'],
+    [{ singleDomainHosting: true }, '__Host-hostlet_admin', true, '/'],
+    [{}, 'hostlet_admin', false, '/api'],
+  ]) {
     const sessions = { purgeExpired() {}, create() { return { token: 'valid' }; }, find(token) { return token === 'valid' ? { id: 's' } : null; }, delete(token) { this.deleted = token; } };
-    const auth = createAuth({ config: { ipHosting, secureCookies: false, adminPassword: 'password', sessionTtlMs: 1000 }, sessions });
+    const auth = createAuth({ config: { ...mode, secureCookies: false, adminPassword: 'password', sessionTtlMs: 1000 }, sessions });
     const res = response();
     auth.login({ ip: 'test', body: { password: 'password' } }, res);
     assertCookie(res.set, name, secure, path);

@@ -48,6 +48,7 @@ const permissions = { view: ['owner', 'editor', 'viewer'], edit: ['owner', 'edit
 const hash = token => createHash('sha256').update(token).digest('hex');
 const now = () => new Date().toISOString();
 const validId = id => typeof id === 'string' && id.length > 0;
+const displayEmail = alias => `CASE WHEN ${alias}.email LIKE '%@users.hostlet.invalid' THEN substr(${alias}.email,1,instr(${alias}.email,'@')-1) ELSE ${alias}.email END`;
 
 /**
  * Synchronous service over node:sqlite DatabaseSync. All mutators take an
@@ -96,7 +97,7 @@ export function createWorkspaceService(db) {
     listAudit(id,actor,before=null) { return tx(()=>{
       authorize(id,actor,'manage');
       if (before !== null && (!Number.isSafeInteger(before) || before < 1)) fail('INVALID');
-      return db.prepare(`SELECT a.id,a.action,a.actor_id AS actorId,actor.email AS actorEmail,a.target_user_id AS targetUserId,target.email AS targetEmail,a.role,a.page_id AS pageId,a.resource_id AS resourceId,a.created_at AS createdAt FROM workspace_audit a JOIN users actor ON actor.id=a.actor_id LEFT JOIN users target ON target.id=a.target_user_id WHERE a.workspace_id=? AND (? IS NULL OR a.id<?) ORDER BY a.id DESC LIMIT 100`).all(id,before,before).map(row=>({...row}));
+      return db.prepare(`SELECT a.id,a.action,a.actor_id AS actorId,${displayEmail('actor')} AS actorEmail,a.target_user_id AS targetUserId,${displayEmail('target')} AS targetEmail,a.role,a.page_id AS pageId,a.resource_id AS resourceId,a.created_at AS createdAt FROM workspace_audit a JOIN users actor ON actor.id=a.actor_id LEFT JOIN users target ON target.id=a.target_user_id WHERE a.workspace_id=? AND (? IS NULL OR a.id<?) ORDER BY a.id DESC LIMIT 100`).all(id,before,before).map(row=>({...row}));
     }); },
     listWorkspaces(actor) {
       user(actor);
@@ -104,11 +105,11 @@ export function createWorkspaceService(db) {
     },
     listMembers(id, actor) { return tx(() => {
       authorize(id, actor, 'view');
-      return db.prepare('SELECT m.user_id AS userId,u.email,m.role,m.created_at AS createdAt FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=? ORDER BY m.created_at,m.user_id').all(id);
+      return db.prepare(`SELECT m.user_id AS userId,${displayEmail('u')} AS email,m.role,m.created_at AS createdAt FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=? ORDER BY m.created_at,m.user_id`).all(id);
     }); },
     listRequests(id, actor) { return tx(() => {
       authorize(id, actor, 'manage'); team(id);
-      return db.prepare("SELECT r.id,r.user_id AS userId,u.email,r.status,r.created_at AS createdAt,r.decided_at AS decidedAt,r.decided_by AS decidedBy FROM workspace_join_requests r JOIN users u ON u.id=r.user_id WHERE r.workspace_id=? ORDER BY r.created_at,r.id").all(id);
+      return db.prepare(`SELECT r.id,r.user_id AS userId,${displayEmail('u')} AS email,r.status,r.created_at AS createdAt,r.decided_at AS decidedAt,r.decided_by AS decidedBy FROM workspace_join_requests r JOIN users u ON u.id=r.user_id WHERE r.workspace_id=? ORDER BY r.created_at,r.id`).all(id);
     }); },
     createWorkspace(actor, { type, name } = {}) {
       if (!['personal', 'team'].includes(type) || typeof name !== 'string' || !name.trim() || name.length > 200) fail('INVALID');
