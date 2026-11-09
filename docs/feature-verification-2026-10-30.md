@@ -4,7 +4,9 @@
 
 > 2026-11-09 更新：`hostlet-cli` 与 `hostlet-skill` 已发布到公共 npm registry，`latest` 标签均为 `0.2.0`；CLI 新增注册、登录和 API Key 管理，Skill 安装器自带隔离 CLI。官网新增可复制的安装指令与 AI 助手提示词。最新完整回归为 386 项，其中 384 项通过、2 项按 Windows 平台条件跳过、0 失败；`npm run build` 通过（48 个模块）。下文涉及旧版本和“尚未发布”的记录保留为发布前的核验证据；发布后的安装与版本验证见仓库根目录 `README.md` 和 npm 包页面。
 
-> 2026-11-09 生产发布：`96f2341` 已部署到 `/opt/hostlet/releases/20261109-96f234125a9f`，`/opt/hostlet/app` 原子切换并重启服务。服务器隔离目录执行 `npm test` 共 386 项、386 通过、0 跳过；切换后健康检查、公网中英文安装提示词、双语 HTML、公开目录、宣传应用和 13 项宿主机冒烟均通过。按官网提示词在 Windows Codex 默认技能目录执行 `npx --yes hostlet-skill@latest install` 成功，随附 `hostlet.cmd --version` 输出 `0.2.0`；新会话加载技能与真实浏览器交互仍待确认。
+> 2026-11-09 生产发布：`96f2341` 已部署到 `/opt/hostlet/releases/20261109-96f234125a9f`，`/opt/hostlet/app` 原子切换并重启服务。服务器隔离目录执行 `npm test` 共 386 项、386 通过、0 跳过；切换后健康检查、公网中英文安装提示词、双语 HTML、公开目录、宣传应用和 13 项宿主机冒烟均通过。按官网提示词在 Windows Codex 默认技能目录执行 `npx --yes hostlet-skill@latest install` 成功，随附 `hostlet.cmd --version` 输出 `0.2.0`；已安装技能通过结构校验，且新会话可加载 `hostlet-publish`。真实浏览器交互仍待单独验收。
+
+> 2026-11-09 发布复核：公共 npm registry 的 `hostlet-cli` 与 `hostlet-skill` 均含 `0.0.0-stage`、`0.1.0`、`0.2.0`，`latest` 为 `0.2.0`；GitHub `origin/master` 与本地 HEAD 同为 `a7f1b2f`。官网 `/` 与 `/?lang=en` 均返回 200，且包含安装命令、GitHub 仓库链接及对应语言提示词。Windows 宿主再次执行 `npm test`：386 项，384 通过、2 项条件跳过、0 失败；`npm run build` 通过 48 个模块。按官网命令从 npm 安装到隔离临时目录成功，随附 CLI 输出 `hostlet-cli 0.2.0`。生产主机 `/opt/hostlet/app` 仍指向 `20261109-96f234125a9f`，`hostlet` 服务为 active。
 
 ## 本次验证
 
@@ -23,8 +25,8 @@
 - 新增 CLI 回滚与分享命令测试、Bearer 分享路由测试，以及真实应用中的 `read`/`publish`/`share` 作用域和回滚集成测试。
 - 新增 8 项 CLI 帮助、版本、未知命令、凭据脱敏和打包清单测试。`npm pack ./cli` 只包含 `hostlet.js`、`package.json`、`README.md` 和 `LICENSE`；本地 tarball 在 Windows 干净目录安装成功，安装后的 `hostlet --help`、`hostlet --version` 和 `hostlet help share` 均通过。
 - 官网目标在真实 Chromium 中完成 1440px 桌面、390px 和 320px 移动视口检查；覆盖分页加载、搜索、空状态、接口失败重试、中英文切换、SEO 元数据和横向溢出。测试使用临时公开应用数据和本机隔离服务，未触碰现有 `data`。
-- 官网新版本已切换至线上 `/opt/hostlet/app`，13 项部署冒烟检查全部通过；外部 Chromium 在 1536px、390px 和 320px 复验 GitHub 区块，无横向溢出。GitHub 账号 `Revolves` 下尚无 Hostlet 仓库，因此当前仅展示已验证的账号入口。
-- 本地 `master` 与 `origin/master` 已同步；本轮 GitHub 入口、发布 Skill、CLI 地址说明和宿主机部署文档仍在工作区，尚未提交。
+- 官网新版本已切换至线上 `/opt/hostlet/app`，13 项部署冒烟检查全部通过；外部 Chromium 在 1536px、390px 和 320px 复验 GitHub 区块，无横向溢出。发布时 GitHub 账号 `Revolves` 下尚无 Hostlet 仓库，因此当时仅展示已验证的账号入口；现已建立公开仓库 <https://github.com/Revolves/hostlet>。
+- 本地 `master` 与 `origin/master` 已同步到 `a7f1b2f`；发布 Skill、CLI 地址说明和宿主机部署文档均已提交并推送。
 - 截至 2026-10-30 的独立 Chrome 与本机自签名 HTTPS 实验通过：账号、团队审批和角色变更、私有托管、分享与撤销、配额、账号注销和平台治理等流程。使用临时数据、模拟邮件，不能代替生产域名和真实邮件浏览器验收。
 - 此前的独立私有访问实验 1 项测试通过；本机 SMTP 协议实验通过 TLS、STARTTLS、认证、收件人拒绝和证书校验，以及模拟邮件验证与重置。
 - 上述测试使用临时数据库、合成账号和测试文件；未触碰现有 `data`。本次未重新部署服务器或重复发送真实邮件。
@@ -41,7 +43,7 @@
 | 配额、保留策略、举报及停用 | 已实现并有验证 | 此前服务端及浏览器覆盖配额、配置、举报和停用；邮件失败及清理等待期主要使用模拟邮件和时钟。 |
 | 管理员配置 | 部分实现 | 注册开关、工作空间配额和保留周期可在界面设置；SMTP 和实例级上传硬上限通过环境配置设置，而非管理界面。 |
 | 恢复、迁移与备份 | 已实现，生产演练待完成 | 自动化覆盖发布、删除、账号注销和迁移中断恢复；备份恢复与旧页迁移仅使用合成数据，未对实际生产备份演练。 |
-| API 凭据、CLI 和 Skill | 已实现并有验证 | 账户页 `API Key` 标签可创建/撤销 30 天凭据，默认包含读取、发布和分享权限；真实浏览器创建和 Bearer CLI 查询通过。CLI 可查询空间、应用、版本，发布 HTML/ZIP/目录及替换版本，并支持回滚、分享和不确定结果恢复。CLI 默认使用 `https://hostlet.cn`，设置 `HOSTLET_URL` 可切换自建实例。`hostlet-cli@0.1.0` 与 `hostlet-skill@0.1.0` 已发布到公共 npm registry，并在 Windows 干净目录完成安装、版本和 Skill 文件写入验证；Linux/macOS 实机验证仍待补。 |
+| API 凭据、CLI 和 Skill | 已实现并有验证 | 账户页 `API Key` 标签可创建/撤销 30 天凭据，默认包含读取、发布和分享权限；真实浏览器创建和 Bearer CLI 查询通过。CLI 可查询空间、应用、版本，发布 HTML/ZIP/目录及替换版本，并支持回滚、分享和不确定结果恢复。CLI 默认使用 `https://hostlet.cn`，设置 `HOSTLET_URL` 可切换自建实例。`hostlet-cli@0.2.0` 与 `hostlet-skill@0.2.0` 已发布到公共 npm registry；Windows 干净目录、官网提示词隔离安装、技能结构校验、随附 CLI 版本输出和新会话加载均已验证；Linux/macOS 实机验证仍待补。 |
 | MCP、Skill、GitHub Action | Skill 已实现，MCP/Action 未实现 | 可安装 Skill 位于 `skills/hostlet-publish/`，复用 CLI 并支持官方地址与自定义实例；默认私有、令牌保护和不确定结果恢复均已写入操作约束。Skill 结构校验通过，真实目录发布、替换版本和版本查询已在隔离多用户实例通过；MCP 和发布 Action 尚未提供。 |
 | 容器自部署 | 已有隔离演练，目标环境待验收 | 此前 ARM64 Docker 镜像和独立 Compose 测试配置已构建启动，并经本机隧道验证；仓库示例 Compose 尚未原样运行验收。 |
 
@@ -69,8 +71,8 @@
 
 ## 待办：开源交付与可选方向
 
-- [x] **O1 开源仓库准备。** 已建立首个经审查的提交，并补充贡献指南、安全漏洞报告方式、变更记录及 Issue/PR 模板，同时明确当前版本成熟度。远端推送仍待执行。
-- [ ] **O2 自动化发布质量。** 现有 GitHub Actions 已覆盖 Node 22.13/24 的 `npm test` 和 `npm run build`；容器烟雾测试、浏览器端到端 CI、依赖持续审计与制品校验仍未实现。实际发布镜像或 npm 包前另行确定名称、版本和发布目标。
+- [x] **O1 开源仓库准备。** 已建立公开仓库 <https://github.com/Revolves/hostlet> 并同步 `master`；贡献指南、安全漏洞报告方式、变更记录及 Issue/PR 模板已提交，当前版本成熟度已明确。
+- [ ] **O2 自动化发布质量。** 现有 GitHub Actions 已覆盖 Node 22.13/24 的 `npm test` 和 `npm run build`；容器烟雾测试、浏览器端到端 CI、依赖持续审计与制品校验仍未实现。`hostlet-cli` 和 `hostlet-skill` 的 npm 包已发布，后续发布仍需制品校验和固定版本门禁。
 - [x] **O3 轻量发布审核。** 团队编辑者可提交当前版本供所有者批准或驳回，个人空间与团队所有者可直接公开；团队公开页面须先转私有才能更换版本。审核未部署到现有服务器。
 - [ ] **O4 GitHub Action（可选）。** 在 CLI 接口、幂等及令牌约束稳定后封装，提供固定版本示例并验证令牌不会出现在日志中。
 

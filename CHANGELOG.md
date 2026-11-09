@@ -12,6 +12,7 @@
 - 官网新增中英文 FAQ、JSON-LD 结构化数据、`robots.txt`、`sitemap.xml`、无 JavaScript 可读内容和 GitHub 入口。
 - 官网新增中英文 Skill 安装指令与 AI 助手提示词的一键复制区，安装步骤仅到 Skill 就绪，不会提前要求账号授权或发布。
 - `hostlet-cli@0.2.0` 与 `hostlet-skill@0.2.0` 已发布到公共 npm registry，并完成 Windows 干净安装与技能自带 CLI 验证。
+- 官网中英文 AI 助手提示词已按公共 npm 包完成隔离安装演练；Windows Codex 默认技能目录安装、结构校验、随附 CLI 版本输出及新会话加载均已核验。
 - 当前提交 `96f2341` 已发布到 `hostlet.cn` 宿主机，生产发布目录为 `/opt/hostlet/releases/20261109-96f234125a9f`；服务器隔离目录 386 项测试全通过，切换后健康检查、公网中英文安装区块和 13 项部署冒烟通过。
 - `hostlet-cli` 发布到公共 npm registry，可直接 `npm install -g hostlet-cli`。
 - `hostlet-skill` 发布到公共 npm registry，提供 `hostlet-skill install` 安装器，将发布 Skill 写入 Codex skills 目录。
@@ -64,3 +65,4 @@
 - 隔离多用户实例完成真实浏览器注册、自动登录、API Key 创建及 Bearer CLI 空间查询。
 - `https://hostlet.cn/p/hostlet/` 已上线，公开目录已收录；桌面和 320/390px 窄屏检查通过，入口访问计数正常。
 - `hostlet-cli@0.1.0` 与 `hostlet-skill@0.1.0` 已发布到公共 npm registry，并在 Windows 干净目录完成安装、版本输出和 Skill 文件写入验证；Linux/macOS 实机安装验证仍待补。
+- Windows 全量回归 386 项：384 通过、2 项按平台条件跳过、0 失败；`npm run build` 通过（48 个模块）。`hostlet.cn` 与 GitHub `master` 同步到 `a7f1b2f`，生产服务对应 `96f2341` 发布目录并处于 active。
