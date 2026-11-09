@@ -51,12 +51,17 @@ Page settings support editing, replacement releases, version history, rollback, 
 
 ## CLI
 
-The CLI is an independent package in [`cli/`](cli) and requires Node.js 22.13 or later. It has not been published to the public npm registry yet, and the package name and registry availability still need confirmation. Install it from this checkout or from a local tarball:
+The CLI is published on npm as [`hostlet-cli`](https://www.npmjs.com/package/hostlet-cli) and requires Node.js 22.13 or later. Its source lives in [`cli/`](cli).
+
+```sh
+npm install -g hostlet-cli
+hostlet --help
+```
+
+For development, install from this checkout or build a local tarball:
 
 ```sh
 npm install -g ./cli
-hostlet --help
-
 npm pack ./cli
 npm install -g ./hostlet-cli-0.1.0.tgz
 ```
@@ -85,7 +90,14 @@ Publishing accepts HTML, ZIP, or a directory and creates a private application b
 
 ## Agent Skill
 
-The installable publishing skill is in [`skills/hostlet-publish/`](skills/hostlet-publish/). It reuses the CLI, defaults to the official `https://hostlet.cn` instance, and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation of the target workspace and file boundary, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
+The publishing skill is published on npm as [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill) and its source lives in [`skills/hostlet-publish/`](skills/hostlet-publish/).
+
+```sh
+npm install -g hostlet-cli
+npx hostlet-skill install
+```
+
+The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default; use `--target` for another skills directory. It reuses the CLI, defaults to the official `https://hostlet.cn` instance, and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation of the target workspace and file boundary, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
 
 ## Multiuser mode
 

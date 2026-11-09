@@ -4,7 +4,7 @@ Publish and manage static applications on [Hostlet](https://hostlet.cn) or a sel
 
 ## Status
 
-This package is prepared for standalone npm distribution but has **not** been published to the public npm registry. The package name and registry availability still need to be confirmed before a public release. Install it from a checkout or a local tarball.
+Published on npm as [`hostlet-cli`](https://www.npmjs.com/package/hostlet-cli). The source lives in the [Hostlet GitHub repository](https://github.com/Revolves/hostlet/tree/master/cli).
 
 ## Requirements
 
@@ -12,26 +12,41 @@ This package is prepared for standalone npm distribution but has **not** been pu
 
 ## Install
 
-From a checkout:
+Install globally from npm:
 
 ```sh
-npm install -g ./cli
+npm install -g hostlet-cli
 hostlet --help
 ```
 
-Or build and install a local tarball:
+Or run it without a global install:
+
+```sh
+npx hostlet-cli --help
+```
+
+For development, install from a checkout:
+
+```sh
+git clone https://github.com/Revolves/hostlet.git
+cd hostlet
+npm install
+node cli/hostlet.js --help
+```
+
+Running from a packed tarball remains supported:
 
 ```sh
 npm pack ./cli
 npm install -g ./hostlet-cli-0.1.0.tgz
-hostlet --version
 ```
 
-Running from source remains supported:
+## Source and issues
 
-```sh
-node cli/hostlet.js --help
-```
+- Repository: <https://github.com/Revolves/hostlet>
+- CLI source: <https://github.com/Revolves/hostlet/tree/master/cli>
+- Issues: <https://github.com/Revolves/hostlet/issues>
+- Agent skill: [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill)
 
 ## Configuration
 

@@ -12,6 +12,7 @@
     "dev:web": "vite --config admin/vite.config.js",
     "build": "vite build --config admin/vite.config.js",
     "pack:cli": "npm pack ./cli",
+    "pack:skill": "npm pack ./skills/hostlet-publish",
     "start": "node --env-file-if-exists=.env server/index.js",
     "test": "node --no-warnings=ExperimentalWarning --test --test-concurrency=1 \"test/*.test.js\"",
     "check": "npm run test && npm run build"

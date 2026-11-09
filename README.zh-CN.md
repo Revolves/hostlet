@@ -34,12 +34,17 @@ npm start
 
 ## 命令行发布
 
-CLI 是 [`cli/`](cli) 下的独立 npm 包，要求 Node.js 22.13 或更高版本。当前尚未发布到公共 npm registry，包名和 registry 可用性仍需确认；可从本仓库源码或本地 tarball 安装：
+CLI 已发布到 npm，包名为 [`hostlet-cli`](https://www.npmjs.com/package/hostlet-cli)，要求 Node.js 22.13 或更高版本；源码位于 [`cli/`](cli)。
+
+```sh
+npm install -g hostlet-cli
+hostlet --help
+```
+
+本地开发可从源码安装或生成 tarball：
 
 ```sh
 npm install -g ./cli
-hostlet --help
-
 npm pack ./cli
 npm install -g ./hostlet-cli-0.1.0.tgz
 ```
@@ -74,9 +79,9 @@ CLI 在发送前将请求 ID 写入标准错误（使用 `--json` 时也如此�
 
 网络中断或响应无法确认时，不代表发布成功或失败。先用上面的 `publish-status` 查询：`succeeded` 是已提交结果，`in_progress` 应稍后再查，`interrupted` 可用相同 ID 和内容重试，`not_found` 也不能证明请求不会到达，仍应使用相同 ID 重试。示例：`hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo" --request-id REQUEST_ID --json`。请求 ID 不是凭据；查询仍需要有效令牌和当前空间权限。
 
-发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。CLI 已提供独立 npm 包清单，可从源码或本地 tarball 安装，但尚未发布到公共 npm registry，也尚未在 Linux 和 macOS 实机验证。接口的限流为单进程限制，公开部署仍需入口限流。
+发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。CLI 已发布到公共 npm registry，也仍可从源码或本地 tarball 安装；尚未在 Linux 和 macOS 实机验证全部命令。接口的限流为单进程限制，公开部署仍需入口限流。
 
-可安装的 Agent Skill 位于 [`skills/hostlet-publish/`](skills/hostlet-publish/)，复用 CLI，默认官方 `https://hostlet.cn`，通过 `HOSTLET_URL` 切换自建实例。使用时先确认目标实例、工作空间和待发布目录；检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回工作台地址、应用 ID 和版本；如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
+Agent Skill 已发布到 npm，包名为 [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill)，源码位于 [`skills/hostlet-publish/`](skills/hostlet-publish/)。安装 CLI 后执行 `npx hostlet-skill install`；安装器默认把 Skill 写入 `$CODEX_HOME/skills/hostlet-publish`，可用 `--target` 指定其他 skills 目录。Skill 复用 CLI，默认官方 `https://hostlet.cn`，通过 `HOSTLET_URL` 切换自建实例。使用时先确认目标实例、工作空间和待发布目录；检查目录内容及 HTML 入口后再运行命令。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后返回工作台地址、应用 ID 和版本；如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
 
 ## 参与贡献
 

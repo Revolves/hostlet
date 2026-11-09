@@ -1,5 +1,7 @@
 # Hostlet CLI Reference
 
+Install the CLI with `npm install -g hostlet-cli`. Package page: <https://www.npmjs.com/package/hostlet-cli>. Source: <https://github.com/Revolves/hostlet/tree/master/cli>.
+
 ## Configuration
 
 | Variable | Required | Meaning |

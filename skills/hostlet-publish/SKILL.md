@@ -5,7 +5,9 @@ description: Publish and manage static HTML sites on Hostlet, including the offi
 
 # Hostlet Publish
 
-Use the repository's `cli/hostlet.js` or an installed `hostlet` command. Do not reimplement the upload protocol.
+Use an installed `hostlet` command (`npm install -g hostlet-cli`) or, in a source checkout, `node cli/hostlet.js`. Do not reimplement the upload protocol.
+
+Source and documentation: <https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish>.
 
 ## Destination
 

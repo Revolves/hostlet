@@ -1,0 +1,41 @@
+{
+  "name": "hostlet-skill",
+  "version": "0.1.0",
+  "description": "Agent skill for publishing static applications to Hostlet through the Hostlet CLI.",
+  "license": "MIT",
+  "author": "Hostlet contributors",
+  "type": "module",
+  "bin": {
+    "hostlet-skill": "install.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "files": [
+    "install.js",
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "agents/",
+    "references/"
+  ],
+  "keywords": [
+    "hostlet",
+    "agent-skill",
+    "codex",
+    "static-hosting",
+    "publish"
+  ],
+  "homepage": "https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Revolves/hostlet.git",
+    "directory": "skills/hostlet-publish"
+  },
+  "bugs": {
+    "url": "https://github.com/Revolves/hostlet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

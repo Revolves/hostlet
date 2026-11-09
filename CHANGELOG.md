@@ -6,6 +6,8 @@
 
 ### Added
 
+- `hostlet-cli` 发布到公共 npm registry，可直接 `npm install -g hostlet-cli`。
+- `hostlet-skill` 发布到公共 npm registry，提供 `hostlet-skill install` 安装器，将发布 Skill 写入 Codex skills 目录。
 - 公开官网首页，展示公开应用、搜索、最近更新/最多访问排序和累计访问数。
 - 官网中英文切换、服务端分页/加载更多、搜索防抖、空状态和错误重试。
 - 官网 SEO 元数据、canonical/hreflang、Open Graph/Twitter 分享卡片和中英文静态标题。
@@ -54,4 +56,4 @@
 - 官网在真实 Chromium 中完成 1440px 桌面、390px 和 320px 移动视口检查；覆盖分页加载、搜索、空状态、接口失败重试、中英文切换、SEO 元数据和横向溢出。
 - 隔离多用户实例完成真实浏览器注册、自动登录、API Key 创建及 Bearer CLI 空间查询。
 - `https://hostlet.cn/p/hostlet/` 已上线，公开目录已收录；桌面和 320/390px 窄屏检查通过，入口访问计数正常。
-- 尚未发布到公共 npm registry，也未完成 Linux/macOS 安装验证、目标域名、HTTPS、真实邮件和真实移动设备验收。
+- `hostlet-cli@0.1.0` 与 `hostlet-skill@0.1.0` 已发布到公共 npm registry，并在 Windows 干净目录完成安装、版本输出和 Skill 文件写入验证；Linux/macOS 实机安装验证仍待补。

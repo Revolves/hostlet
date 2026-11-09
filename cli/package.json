@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Command-line client for publishing and managing static applications on Hostlet.",
   "license": "MIT",
+  "author": "Hostlet contributors",
   "type": "module",
   "bin": {
     "hostlet": "hostlet.js"
@@ -15,12 +16,17 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "test": "node --test ../test/hostlet-cli.test.js ../test/hostlet-cli-help.test.js ../test/hostlet-cli-package.test.js"
+  },
   "keywords": [
     "hostlet",
     "static-hosting",
+    "static-site",
     "cli",
     "publish",
-    "deployment"
+    "deployment",
+    "agent-skill"
   ],
   "homepage": "https://hostlet.cn",
   "repository": {
@@ -30,6 +36,9 @@
   },
   "bugs": {
     "url": "https://github.com/Revolves/hostlet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "jszip": "^3.10.2"
