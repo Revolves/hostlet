@@ -87,6 +87,11 @@ test("installer copies the skill with an isolated CLI runtime", async (t) => {
   const runtimeVersion = await run(process.execPath, [cli, "--version"]);
   assert.equal(runtimeVersion.code, 0, runtimeVersion.stderr);
   assert.match(runtimeVersion.stdout, /^hostlet-cli \d+\.\d+\.\d+/);
+  const wrapper = process.platform === "win32"
+    ? await run("cmd.exe", ["/d", "/c", path.join(target, "bin", "hostlet.cmd"), "--version"])
+    : await run(path.join(target, "bin", "hostlet"), ["--version"]);
+  assert.equal(wrapper.code, 0, wrapper.stderr);
+  assert.match(wrapper.stdout, /^hostlet-cli \d+\.\d+\.\d+/);
 
   const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), "skills", "hostlet-publish", "package.json"), "utf8"));
   const version = await run(process.execPath, [script, "--version"]);
