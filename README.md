@@ -107,10 +107,10 @@ Publishing accepts HTML, ZIP, or a directory and creates a private application b
 The publishing skill is published on npm as [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill) and its source lives in [`skills/hostlet-publish/`](skills/hostlet-publish/).
 
 ```sh
-npx hostlet-skill install
+npx --yes hostlet-skill@latest install
 ```
 
-The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default and bundles an isolated CLI at `bin/hostlet` (Windows: `bin/hostlet.cmd`), so no global CLI install is required. Use `--target` for another skills directory; `--skip-cli` is available only when a global `hostlet` already exists or the environment is offline. The skill defaults to the official `https://hostlet.cn` instance and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation before registering an account or creating a key, never accepts a password in command arguments, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
+The public homepage provides a copyable version of this command and an AI-assistant setup prompt. The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default and bundles an isolated CLI at `bin/hostlet` (Windows: `bin/hostlet.cmd`), so no global CLI install is required. Use `--target` for another skills directory; `--skip-cli` is available only when a global `hostlet` already exists or the environment is offline. The skill defaults to the official `https://hostlet.cn` instance and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation before registering an account or creating a key, never accepts a password in command arguments, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
 
 ## Multiuser mode
 

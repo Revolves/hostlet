@@ -15,6 +15,7 @@ import {
 import { hostingConfig } from "./hosting-address.js";
 import "./public-home.css";
 import { publicFaq } from "../../shared/public-faq.js";
+import { publicInstall, skillInstallCommand } from "../../shared/public-install.js";
 
 const toneNames = ["editorial", "studio", "archive", "signal"];
 
@@ -97,6 +98,23 @@ function GitHubMark() {
 function Count({ value, locale, unavailable }) {
   const text = value === null || value === undefined ? "—" : formatPublicNumber(value, locale);
   return <span className="public-count" aria-label={text === "—" ? unavailable : text}>{text}</span>;
+}
+
+function CopyText({ text, label, copy }) {
+  const [status, setStatus] = useState("");
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus(copy.copied);
+    } catch {
+      setStatus(copy.failed);
+    }
+  }
+  return <div className="public-install__block">
+    <div className="public-install__label"><h3>{label}</h3><button type="button" onClick={handleCopy}>{copy.copy}</button></div>
+    <p className="public-install__text">{text}</p>
+    <p className="public-install__status" role="status" aria-live="polite">{status}</p>
+  </div>;
 }
 
 function ApplicationCard({ app, index, copy, locale }) {
@@ -404,6 +422,13 @@ export default function PublicHome() {
               </li>
             ))}
           </ol>
+          <div className="public-install">
+            <h2>{publicInstall[locale].title}</h2>
+            <p>{publicInstall[locale].description}</p>
+            <CopyText key={`${locale}-command`} text={skillInstallCommand} label={publicInstall[locale].commandLabel} copy={publicInstall[locale]} />
+            <CopyText key={`${locale}-prompt`} text={publicInstall[locale].prompt} label={publicInstall[locale].promptLabel} copy={publicInstall[locale]} />
+            <p>{publicInstall[locale].note}</p>
+          </div>
           <a className="public-button public-button--primary" href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish" target="_blank" rel="noopener noreferrer">{copy.cta.action}<span aria-hidden="true">↗</span></a>
         </section>
 

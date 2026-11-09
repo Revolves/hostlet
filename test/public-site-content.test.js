@@ -10,6 +10,8 @@ import {
   statementTokens,
   visitLabel,
 } from "../shared/public-site.js";
+import { publicInstall, skillInstallCommand } from "../shared/public-install.js";
+import { publicFaq } from "../shared/public-faq.js";
 
 test("public copy keeps both languages structurally in sync", () => {
   const zh = publicCopy["zh-CN"];
@@ -24,6 +26,22 @@ test("public copy keeps both languages structurally in sync", () => {
   assert.ok(en.workflow.steps.every((step) => step.length === 3));
   assert.match(zh.showcase.resultCount, /\{count\}/);
   assert.match(en.showcase.resultCount, /\{count\}/);
+});
+
+test("public supporting content keeps both languages structurally in sync", () => {
+  assert.deepEqual(Object.keys(publicFaq["zh-CN"]).sort(), Object.keys(publicFaq.en).sort());
+  assert.equal(publicFaq["zh-CN"].items.length, publicFaq.en.items.length);
+  assert.deepEqual(Object.keys(publicInstall["zh-CN"]).sort(), Object.keys(publicInstall.en).sort());
+  assert.equal(skillInstallCommand, "npx --yes hostlet-skill@latest install");
+  for (const locale of ["zh-CN", "en"]) {
+    const install = publicInstall[locale];
+    assert.match(install.prompt, /npx --yes hostlet-skill@latest install/);
+    assert.match(install.prompt, /22\.13/);
+    assert.match(install.prompt, /github\.com\/Revolves\/hostlet/);
+    assert.ok(install.copy && install.copied && install.failed);
+  }
+  assert.match(publicInstall["zh-CN"].prompt, /先停下/);
+  assert.match(publicInstall.en.prompt, /Stop after setup/);
 });
 
 test("locale normalization accepts Chinese and English variants", () => {

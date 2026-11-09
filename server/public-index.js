@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { normalizePublicLocale, publicMeta, publicCopy } from "../shared/public-site.js";
 import { publicFaq } from "../shared/public-faq.js";
+import { publicInstall, skillInstallCommand } from "../shared/public-install.js";
 
 const metaStart = "<!-- HOSTLET_META_START -->";
 const metaEnd = "<!-- HOSTLET_META_END -->";
@@ -19,6 +20,7 @@ export function publicIndexLanguage(value) {
 export function renderPublicIndexHtml(template, { origin = "", lang = "zh-CN" } = {}) {
   const locale = publicIndexLanguage(lang);
   const copy = publicCopy[locale];
+  const install = publicInstall[locale];
   const meta = publicMeta({ locale, origin });
   const alternateLocale = locale === "en" ? "zh_CN" : "en_US";
   const structuredData = JSON.stringify({
@@ -64,7 +66,7 @@ export function renderPublicIndexHtml(template, { origin = "", lang = "zh-CN" } 
   if (start >= 0 && end > start) {
     html = `${html.slice(0, start + metaStart.length)}\n    ${tags.join("\n    ")}\n    ${html.slice(end)}`;
   }
-  const content = `<header><a href="/">Hostlet</a> · by Revolves <nav><a href="/?lang=zh-CN" lang="zh-CN">中文</a> / <a href="/?lang=en" lang="en">English</a></nav></header><main><h1>${escapeHtml(copy.hero.lineOne)} ${escapeHtml(copy.hero.lineTwo)}</h1><p>${escapeHtml(copy.hero.description)}</p><a href="/workspace">${escapeHtml(copy.nav.start)}</a><section id="skill"><h2>${escapeHtml(copy.workflow.title)}</h2><ol>${copy.workflow.steps.map(([, title, description]) => `<li><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></li>`).join("")}</ol><a href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish">${escapeHtml(copy.cta.action)}</a></section><section><h2>${escapeHtml(publicFaq[locale].title)}</h2>${publicFaq[locale].items.map(([q, a]) => `<details><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join("")}</section><a href="https://github.com/Revolves/hostlet">GitHub · Revolves/hostlet</a></main>`;
+  const content = `<header><a href="/">Hostlet</a> · by Revolves <nav><a href="/?lang=zh-CN" lang="zh-CN">中文</a> / <a href="/?lang=en" lang="en">English</a></nav></header><main><h1>${escapeHtml(copy.hero.lineOne)} ${escapeHtml(copy.hero.lineTwo)}</h1><p>${escapeHtml(copy.hero.description)}</p><a href="/workspace">${escapeHtml(copy.nav.start)}</a><section id="skill"><h2>${escapeHtml(copy.workflow.title)}</h2><ol>${copy.workflow.steps.map(([, title, description]) => `<li><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></li>`).join("")}</ol><section><h3>${escapeHtml(install.title)}</h3><p>${escapeHtml(install.description)}</p><h4>${escapeHtml(install.commandLabel)}</h4><pre><code>${escapeHtml(skillInstallCommand)}</code></pre><h4>${escapeHtml(install.promptLabel)}</h4><p>${escapeHtml(install.prompt)}</p><p>${escapeHtml(install.note)}</p></section><a href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish">${escapeHtml(copy.cta.action)}</a></section><section><h2>${escapeHtml(publicFaq[locale].title)}</h2>${publicFaq[locale].items.map(([q, a]) => `<details><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join("")}</section><a href="https://github.com/Revolves/hostlet">GitHub · Revolves/hostlet</a></main>`;
   html = html.replace('<div id="root"></div>', `<div id="root">${content}</div>`).replace(/<noscript>[\s\S]*?<\/noscript>/, "");
   return html.replace(/<html\s+lang="[^"]*"/i, `<html lang="${meta.htmlLang}"`);
 }

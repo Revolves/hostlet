@@ -10,6 +10,7 @@
 - CLI 将账户会话和 API Key 保存到用户凭据文件（`HOSTLET_CONFIG` 可覆盖），后续命令自动读取；`HOSTLET_TOKEN` 继续兼容并优先使用。
 - `hostlet-skill` 安装器自带隔离 CLI 运行时和 `bin/hostlet` 包装脚本，无需全局安装 `hostlet-cli` 即可使用；新增 `--cli-version` 和 `--skip-cli`。
 - 官网新增中英文 FAQ、JSON-LD 结构化数据、`robots.txt`、`sitemap.xml`、无 JavaScript 可读内容和 GitHub 入口。
+- 官网新增中英文 Skill 安装指令与 AI 助手提示词的一键复制区，安装步骤仅到 Skill 就绪，不会提前要求账号授权或发布。
 - `hostlet-cli@0.2.0` 与 `hostlet-skill@0.2.0` 已发布到公共 npm registry，并完成 Windows 干净安装与技能自带 CLI 验证。
 - `hostlet-cli` 发布到公共 npm registry，可直接 `npm install -g hostlet-cli`。
 - `hostlet-skill` 发布到公共 npm registry，提供 `hostlet-skill install` 安装器，将发布 Skill 写入 Codex skills 目录。
