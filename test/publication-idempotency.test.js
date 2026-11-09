@@ -22,11 +22,24 @@ const headerFingerprint = 'a'.repeat(64), fingerprint = 'b'.repeat(64);
 const claim = s => s.claim({ ...base, headerFingerprint });
 const bind = s => s.bind({ ...base, fingerprint });
 const result = { pageId: 'p', versionId: 'v', revision: 2 };
+const transaction = (db, callback) => {
+  if (typeof db.isTransaction !== 'boolean') return receipts.withPublicationTransaction(db, callback);
+  db.exec('BEGIN');
+  try {
+    const value = callback();
+    db.exec('COMMIT');
+    return value;
+  } catch (error) {
+    try { db.exec('ROLLBACK'); } catch {}
+    throw error;
+  }
+};
 
 test('succeed outside a caller transaction fails without creating a false success', t => {
-  const { service } = setup(t), owner = service();
+  const { db, service } = setup(t), owner = service();
   claim(owner); bind(owner);
-  assert.throws(() => owner.succeed({ ...base, fingerprint, result }), { code: 'TRANSACTION_REQUIRED' });
+  const code = typeof db.isTransaction === 'boolean' ? 'TRANSACTION_REQUIRED' : 'TRANSACTION_STATE_UNAVAILABLE';
+  assert.throws(() => owner.succeed({ ...base, fingerprint, result }), { code });
   assert.deepEqual(owner.status(base), { status: 'in_progress' });
 });
 
@@ -108,9 +121,7 @@ test('claim, bind and success are durable, isolated and require matching fingerp
   assert.deepEqual(claim(other), { status: 'in_progress' });
   assert.deepEqual(other.claim({ ...base, headerFingerprint: 'c'.repeat(64) }), { status: 'conflict' });
   assert.deepEqual(bind(owner), { status: 'bound' });
-  db.exec('BEGIN');
-  assert.deepEqual(owner.succeed({ ...base, fingerprint, result }), { status: 'succeeded', result });
-  db.exec('COMMIT');
+  transaction(db, () => assert.deepEqual(owner.succeed({ ...base, fingerprint, result }), { status: 'succeeded', result }));
   assert.deepEqual(other.status(base), { status: 'succeeded', result });
   assert.deepEqual(claim(other), { status: 'succeeded' });
   assert.deepEqual(other.bind({ ...base, fingerprint: 'c'.repeat(64) }), { status: 'conflict' });
@@ -124,9 +135,12 @@ test('claim, bind and success are durable, isolated and require matching fingerp
 test('rollback of caller transaction rolls back both publication and success', t => {
   const { db, service } = setup(t), owner = service();
   claim(owner); bind(owner);
-  db.exec('CREATE TABLE example_publication(id TEXT); BEGIN; INSERT INTO example_publication VALUES (\'p\')');
-  owner.succeed({ ...base, fingerprint, result });
-  db.exec('ROLLBACK');
+  db.exec('CREATE TABLE example_publication(id TEXT)');
+  assert.throws(() => transaction(db, () => {
+    db.prepare('INSERT INTO example_publication VALUES (?)').run('p');
+    owner.succeed({ ...base, fingerprint, result });
+    throw new Error('rollback');
+  }), /rollback/);
   assert.equal(db.prepare('SELECT count(*) AS n FROM example_publication').get().n, 0);
   assert.deepEqual(owner.status(base), { status: 'in_progress' });
   assert.deepEqual(owner.interrupt(base), { status: 'interrupted' });
@@ -141,9 +155,7 @@ test('recovery and interruption allow matching retry while stale attempts cannot
   assert.deepEqual(claim(next), { status: 'claimed' });
   assert.deepEqual(old.interrupt(base), { status: 'in_progress' });
   assert.throws(() => bind(old), { code: 'NOT_OWNER' });
-  db.exec('BEGIN');
-  assert.throws(() => old.succeed({ ...base, fingerprint, result }), { code: 'NOT_OWNER' });
-  db.exec('ROLLBACK');
+  assert.throws(() => transaction(db, () => old.succeed({ ...base, fingerprint, result })), { code: 'NOT_OWNER' });
   assert.deepEqual(next.bind({ ...base, fingerprint: 'c'.repeat(64) }), { status: 'conflict' });
   assert.deepEqual(bind(next), { status: 'bound' });
   assert.deepEqual(next.interrupt(base), { status: 'interrupted' });
@@ -152,7 +164,7 @@ test('recovery and interruption allow matching retry while stale attempts cannot
 
 test('success survives recovery and old records are never automatically removed', t => {
   const { db, service } = setup(t), owner = service();
-  claim(owner); bind(owner); db.exec('BEGIN'); owner.succeed({ ...base, fingerprint, result }); db.exec('COMMIT');
+  claim(owner); bind(owner); transaction(db, () => owner.succeed({ ...base, fingerprint, result }));
   db.prepare('UPDATE publication_idempotency SET created_at=0, updated_at=0').run();
   assert.equal(service().recover(), 0);
   assert.deepEqual(service().status(base), { status: 'succeeded', result });
@@ -165,13 +177,9 @@ test('invalid inputs and invalid transitions fail closed', t => {
   assert.throws(() => s.claim({ ...base, headerFingerprint: 'A'.repeat(64) }), { code: 'INVALID' });
   assert.throws(() => s.succeed({ ...base, fingerprint, result }), { code: 'NOT_OWNER' });
   claim(s);
-  db.exec('BEGIN');
-  assert.throws(() => s.succeed({ ...base, fingerprint, result }), { code: 'NOT_OWNER' });
-  db.exec('ROLLBACK');
+  assert.throws(() => transaction(db, () => s.succeed({ ...base, fingerprint, result })), { code: 'NOT_OWNER' });
   bind(s);
-  db.exec('BEGIN');
-  assert.throws(() => s.succeed({ ...base, fingerprint: 'c'.repeat(64), result }), { code: 'NOT_OWNER' });
-  db.exec('ROLLBACK');
+  assert.throws(() => transaction(db, () => s.succeed({ ...base, fingerprint: 'c'.repeat(64), result })), { code: 'NOT_OWNER' });
   assert.deepEqual(s.status(base), { status: 'in_progress' });
 });
 
@@ -200,7 +208,7 @@ test('version 24 migration preserves existing data and creates durable receipts 
   db.exec("INSERT INTO pages(id,title,slug,entry_file,access_mode,source_type,original_filename,release_id,release_dir,created_at,updated_at) VALUES ('p','title','slug','index.html','private','html','index.html','r','/retained','now','now'); DROP TRIGGER workspace_public_team_release_guard; DROP TABLE workspace_publication_review; DROP TRIGGER publication_idempotency_account_deleted; DROP TRIGGER publication_idempotency_workspace_deleted; DROP TABLE publication_idempotency; PRAGMA user_version=24");
   const migrated = openDatabase(file);
   const owner = createPublicationIdempotency(migrated);
-  claim(owner); bind(owner); migrated.exec('BEGIN'); owner.succeed({ ...base, fingerprint, result }); migrated.exec('COMMIT');
+  claim(owner); bind(owner); transaction(migrated, () => owner.succeed({ ...base, fingerprint, result }));
   migrated.close();
   assert.deepEqual(service().status(base), { status: 'succeeded', result });
   assert.equal(db.prepare('SELECT release_dir FROM pages WHERE id=\'p\'').get().release_dir, '/retained');
