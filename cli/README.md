@@ -114,6 +114,10 @@ Only HTTPS is accepted for remote instances. HTTP is allowed only for `localhost
 | `publish` | Publish a new private application or replace an existing release. | `publish` |
 | `publish-status` | Check an earlier publication request. | `read` or `publish` |
 | `rollback` | Activate a retained release as the current version. | `publish` |
+| `visibility` | Switch an application between public and private. | `publish` |
+| `rename` | Change an application title. | `publish` |
+| `delete-release` | Delete one retained release. | `publish` |
+| `delete-app` | Delete an application and every release. | `publish` |
 | `shares` | List share-link metadata. | `share` |
 | `share` | Create a revocable share link. | `share` |
 | `revoke-share` | Revoke a share link immediately. | `share` |

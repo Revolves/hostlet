@@ -75,6 +75,9 @@ hostlet register --username alice --password-stdin
 hostlet workspaces
 hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo"
 hostlet visibility public --workspace WORKSPACE_ID --page PAGE_ID
+hostlet rename --workspace WORKSPACE_ID --page PAGE_ID --title "New title"
+hostlet delete-release --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION
+hostlet delete-app --workspace WORKSPACE_ID --page PAGE_ID --confirm
 ```
 
 The account password is read from standard input and must contain at least 12 characters. `register` and `login` save the account session and a 30-day API key with read, publish, and share scopes; later commands read the saved token automatically. `HOSTLET_URL` is optional and defaults to `https://hostlet.cn`; set it for a custom instance. `HOSTLET_TOKEN` remains supported for automation and overrides the saved token. The target instance must expose the account credential flow and `/api/cli`. New applications stay private until `hostlet visibility public` is run. Do not use the administrator password as a token, and do not commit the token or write it to logs.

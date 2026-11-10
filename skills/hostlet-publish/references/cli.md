@@ -75,6 +75,16 @@ Replace an existing application:
 
 Requires the `publish` scope. A public application is accessible to anyone who knows its address, so run this only when the owner asks for it; team workspaces also require the owner role. The public URL is shown on the application card in the account portal.
 
+## Rename and Delete
+
+```powershell
+& $hostlet rename --workspace WORKSPACE_ID --page PAGE_ID --title "New title" --json
+& $hostlet delete-release --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION --json
+& $hostlet delete-app --workspace WORKSPACE_ID --page PAGE_ID --confirm --json
+```
+
+`rename` updates the title in the portal and the public directory. `delete-release` removes a single retained version and requires the current revision; `CONFLICT` means the application changed, and the active release cannot be deleted. `delete-app` permanently deletes the application, its releases and its public address, and needs `--confirm`. Ask the owner before deleting anything; application deletion requires a personal workspace or the owner role.
+
 ## Uncertain Results
 
 The CLI prints the publication request ID to standard error before uploading.

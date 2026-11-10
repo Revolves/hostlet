@@ -51,7 +51,9 @@ test('verified account manages its own API credentials with password confirmatio
   assert.equal(page.accessMode,'private');
   assert.equal(db.prepare("SELECT count(*) n FROM workspace_audit WHERE page_id=? AND action='page.cli_published'").get(page.id).n,1);
   assert.equal((await fetch(`${base}/api/cli/workspaces/${workspace.id}/pages`,{headers:bearer})).status,200);
-  assert.equal((await fetch(`${base}/api/cli/workspaces/${workspace.id}/pages/${page.id}`,{method:'DELETE',headers:bearer})).status,404);
+  assert.equal((await fetch(`${base}/api/cli/workspaces/${workspace.id}/members`,{headers:bearer})).status,404);
+  assert.equal((await fetch(`${base}/api/cli/workspaces/${workspace.id}/pages/${page.id}`,{method:'DELETE',headers:bearer})).status,204);
+  assert.equal((await fetch(`${base}/api/cli/workspaces/${workspace.id}/pages/${page.id}`,{headers:bearer})).status,404);
   const site=path.join(dir,'site');await fs.mkdir(site);await fs.writeFile(path.join(site,'index.html'),'<h1>Directory</h1>');
   const cli=await promisify(execFile)(process.execPath,['cli/hostlet.js','publish',site,'--workspace',workspace.id,'--title','Directory demo','--json'],{cwd:process.cwd(),env:{...process.env,HOSTLET_URL:base,HOSTLET_TOKEN:credential.token}});
   const result=JSON.parse(cli.stdout);

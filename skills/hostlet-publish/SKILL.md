@@ -99,6 +99,16 @@ If the user has no account yet, run the account setup flow first, then `workspac
 
 Public applications are reachable by anyone with the address, so confirm with the owner before switching. Team workspaces require the owner role. After a successful change, report the state and point the owner to the public link shown on the application card in the account portal.
 
+## Manage an application
+
+```powershell
+& $hostlet rename --workspace WORKSPACE_ID --page PAGE_ID --title "New title" --json
+& $hostlet delete-release --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION --json
+& $hostlet delete-app --workspace WORKSPACE_ID --page PAGE_ID --confirm --json
+```
+
+`rename` changes the title shown in the portal and the public directory. `delete-release` permanently drops one retained version and needs the current revision; the active release must be switched first. `delete-app` permanently removes the application, every release and its public address, so confirm with the owner and pass `--confirm`; there is no undo. All three require the `publish` scope, and application deletion needs a personal workspace or the owner role.
+
 ## Confirm the Result
 
 - Treat a successful CLI exit and a returned page ID as the publication result.

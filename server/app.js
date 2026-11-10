@@ -803,8 +803,11 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       const publish=req.method==='POST' && /^\/[^/]+\/pages(?:\/[^/]+\/replace)?$/.test(p);
       const rollback=req.method==='POST' && /^\/[^/]+\/pages\/[^/]+\/releases\/[^/]+\/activate$/.test(p);
       const visibilityChange=req.method==='PATCH' && /^\/[^/]+\/pages\/[^/]+\/visibility$/.test(p);
-      return readable || publish || rollback || visibilityChange ? next() : res.sendStatus(404);
-    },createWorkspacePagesRouter({service:workspacePages,requireUser:cliUser,uploader:workspaceUploader,tempFiles,visibility,receiptFactory:()=>createPublicationIdempotency(db)}));
+      const rename=req.method==='PATCH' && /^\/[^/]+\/pages\/[^/]+$/.test(p);
+      const deletePageRequest=req.method==='DELETE' && /^\/[^/]+\/pages\/[^/]+$/.test(p);
+      const deleteRelease=req.method==='DELETE' && /^\/[^/]+\/pages\/[^/]+\/releases\/[^/]+$/.test(p);
+      return readable || publish || rollback || visibilityChange || rename || deletePageRequest || deleteRelease ? next() : res.sendStatus(404);
+    },createWorkspacePagesRouter({service:workspacePages,requireUser:cliUser,uploader:workspaceUploader,tempFiles,visibility,releaseCleanup,deletePage:deleteWorkspacePage,receiptFactory:()=>createPublicationIdempotency(db)}));
     if (hostingConfig) {
       platformAdmin = createPlatformAdminService({ db, defaultRegistrationEnabled: config.registrationEnabled });
       if (config.ipHosting) {

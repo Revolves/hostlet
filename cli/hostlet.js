@@ -151,6 +151,43 @@ const commands=new Map([
       'The public address appears on the application card in the account portal.'
     ]
   }],
+  ['rename',{
+    summary:'Rename an application.',
+    usage:'hostlet rename --workspace <id> --page <id> --title <title> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--title <title>','New application title.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the publish scope. The title is also shown in the public directory when the application is public.']
+  }],
+  ['delete-app',{
+    summary:'Delete an application and its releases.',
+    usage:'hostlet delete-app --workspace <id> --page <id> --confirm [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--confirm','Required acknowledgement that deletion is permanent.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:[
+      'Requires the publish scope and a personal workspace or the owner role.',
+      'Deletion removes the application, every retained release and its public address; it cannot be undone.'
+    ]
+  }],
+  ['delete-release',{
+    summary:'Delete one retained release.',
+    usage:'hostlet delete-release --workspace <id> --page <id> --release <id> --revision <n> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--release <id>','Release ID to delete.'],
+      ['--revision <n>','Current application revision.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:['Requires the publish scope. The active release cannot be deleted; activate another release first.']
+  }],
   ['shares',{
     summary:'List share links for an application.',
     usage:'hostlet shares --workspace <id> --page <id> [--json]',
@@ -256,7 +293,7 @@ function options(args,allowed) {
   for (let i=0;i<args.length;i++) {
     const key=args[i];
     if (!allowed.includes(key) || Object.hasOwn(result,key)) throw usageError();
-    if (key==='--json' || key==='--password-stdin' || key==='--no-key') result[key]=true;
+    if (key==='--json' || key==='--password-stdin' || key==='--no-key' || key==='--confirm') result[key]=true;
     else { if (!args[i+1] || args[i+1].startsWith('--')) throw usageError(); result[key]=args[++i]; }
   }
   return result;
@@ -713,6 +750,30 @@ async function main() {
     const result=await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/visibility`,{method:'PATCH',body:{visibility:value},action:'Visibility update'});
     if (!result || result.visibility!==value) throw new Error('Visibility update returned an invalid response.');
     output(opts['--json'] ? `${JSON.stringify(result)}\n` : `Application ${opts['--page']} is now ${value}.\n`);
+    return;
+  }
+  if (command==='rename') {
+    const opts=options(rest,['--workspace','--page','--title','--json']);
+    if (!opts['--workspace'] || !opts['--page'] || !opts['--title']) throw usageError();
+    const result=await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}`,{method:'PATCH',body:{title:opts['--title']},action:'Rename'});
+    if (!result?.page?.id || typeof result.page.title!=='string') throw new Error('Rename returned an invalid response; refresh the page before retrying.');
+    output(opts['--json'] ? `${JSON.stringify(result)}\n` : `Renamed application ${result.page.id} to "${result.page.title}".\n`);
+    return;
+  }
+  if (command==='delete-app') {
+    const opts=options(rest,['--workspace','--page','--confirm','--json']);
+    if (!opts['--workspace'] || !opts['--page']) throw usageError();
+    if (!opts['--confirm']) throw new Error('Deleting an application cannot be undone. Re-run with --confirm to proceed.');
+    await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}`,{method:'DELETE',action:'Application deletion'});
+    output(opts['--json'] ? `${JSON.stringify({deleted:true,pageId:opts['--page']})}\n` : `Deleted application ${opts['--page']}.\n`);
+    return;
+  }
+  if (command==='delete-release') {
+    const opts=options(rest,['--workspace','--page','--release','--revision','--json']);
+    if (!opts['--workspace'] || !opts['--page'] || !opts['--release'] || !validRevision(opts['--revision'])) throw usageError();
+    const result=await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/releases/${encodeURIComponent(opts['--release'])}`,{method:'DELETE',body:{revision:Number(opts['--revision'])},action:'Release deletion'});
+    if (!Number.isSafeInteger(result?.revision)) throw new Error('Release deletion returned an invalid response; refresh the application before retrying.');
+    output(opts['--json'] ? `${JSON.stringify(result)}\n` : `Deleted release ${opts['--release']} from application ${opts['--page']} (revision ${result.revision}).\n`);
     return;
   }
   const [input,...args]=rest;

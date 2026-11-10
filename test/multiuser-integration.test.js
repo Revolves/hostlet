@@ -196,7 +196,20 @@ test("account sessions can manage their workspaces but cannot access legacy admi
   assert.equal(db.prepare("SELECT count(*) n FROM platform_admin_audit WHERE action IN ('quota.override','quota.default') AND target_id=?").get(space.id).n,2);
   assert.equal((await fetch(base + "/api/pages", { headers: { Cookie: cookie } })).status, 401);
   assert.equal((await post("/api/workspaces", { name: "Team", type: "team" }, cookie, "https://evil.example")).status, 403);
-  assert.equal((await fetch(base + pageBase, {method:'DELETE',headers:{Origin:base,Cookie:cookie}})).status,204);
+  const beforeCliManage = (await (await cli(readToken,`/pages/${page.id}`)).json()).page;
+  const cliRename = await cli(publishToken,`/pages/${page.id}`,{method:'PATCH',body:{title:'Renamed by CLI'}});
+  assert.equal(cliRename.status,200);
+  assert.equal((await cliRename.json()).page.title,'Renamed by CLI');
+  const retained = (await (await cli(readToken,`/pages/${page.id}/releases`)).json()).releases;
+  const staleRelease = retained.find(release=>release.releaseId!==beforeCliManage.releaseId);
+  if (staleRelease) {
+    const cliDeleteRelease = await cli(publishToken,`/pages/${page.id}/releases/${staleRelease.releaseId}`,{method:'DELETE',body:{revision:beforeCliManage.revision}});
+    assert.equal(cliDeleteRelease.status,200);
+    assert.equal((await cliDeleteRelease.json()).revision,beforeCliManage.revision+1);
+  }
+  const cliDeleteApp = await cli(publishToken,`/pages/${page.id}`,{method:'DELETE'});
+  assert.equal(cliDeleteApp.status,204);
+  assert.equal((await cli(readToken,`/pages/${page.id}`)).status,404);
   assert.notEqual((await hostedRequest('/')).status,200);
   assert.equal(db.prepare('SELECT count(*) n FROM workspace_pages WHERE id=?').get(page.id).n,0);
   const audit=await (await fetch(`${base}/api/workspaces/${space.id}/audit`,{headers:{Cookie:cookie}})).json();

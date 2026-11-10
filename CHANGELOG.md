@@ -6,6 +6,7 @@
 
 ### Added
 
+- `hostlet-cli@0.2.2` 新增 `rename`、`delete-release` 与 `delete-app`，可在不打开门户的情况下改名、清理单个历史版本和删除应用；删除应用必须显式传 `--confirm`。
 - `hostlet-cli@0.2.1` 新增 `visibility public|private`，通过 `/api/cli` 修改应用可见性，无需再打开账户门户；团队空间仍要求所有者角色。
 - 安装器生成的 `hostlet.ps1` 现在转发管道输入，`login/register/keys create --password-stdin` 在 PowerShell 管道下不再卡住或报“0 字节”。
 - `hostlet-cli` 新增 `register`、`login`、`logout`、`whoami` 和 `keys list/create/revoke`，可从零完成注册、创建 API Key 和发布。
