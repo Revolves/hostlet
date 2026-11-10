@@ -50,6 +50,8 @@ Use `--key-name`, `--scopes`, and `--expires` to customize the key. The password
 & $hostlet versions --workspace WORKSPACE_ID --page PAGE_ID --json
 ```
 
+`SKILL.md` contains the complete command map. Do not probe `--help` before every command. Use `hostlet help <command>` only for a command that is not in the map or when an option is rejected as unknown.
+
 ## Publish
 
 ```powershell
@@ -64,7 +66,7 @@ Replace an existing application:
 & $hostlet publish ./dist --workspace WORKSPACE_ID --page PAGE_ID --revision 7 --json
 ```
 
-`CONFLICT` means the application changed. Read its current revision before retrying. New applications are private; publishing does not make them public.
+`--title` is only used for a new application. It is ignored during replacement; use `rename` if the title must change. `CONFLICT` means the application changed. Read its current revision before retrying. New applications are private; publishing does not make them public.
 
 ## Visibility
 

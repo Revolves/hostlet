@@ -6,6 +6,7 @@
 
 ### Added
 
+- `hostlet-skill@0.2.5` 增加完整命令地图，明确替换发布不读取 `--title`，并要求已文档化命令不再反复执行 `--help`；新增命令覆盖测试，CLI 新增命令时会检查技能文档是否同步。
 - `hostlet-skill@0.2.4` 默认携带 `hostlet-cli@0.2.2`；新安装技能无需额外传 `--cli-version` 即可使用 `rename`、`delete-release` 与 `delete-app`。技能包与 CLI 版本同步已加入打包测试。
 - `hostlet-cli@0.2.2` 新增 `rename`、`delete-release` 与 `delete-app`，可在不打开门户的情况下改名、清理单个历史版本和删除应用；删除应用必须显式传 `--confirm`。
 - `hostlet-cli@0.2.1` 新增 `visibility public|private`，通过 `/api/cli` 修改应用可见性，无需再打开账户门户；团队空间仍要求所有者角色。

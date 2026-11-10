@@ -123,8 +123,8 @@ The CLI bundled with each skill release is pinned for reproducible installs. To 
 Bump `skills/hostlet-publish/package.json` and push a matching tag; the `Publish skill` workflow validates the tag against the manifest and publishes through npm Trusted Publishing, so no token or one-time password is stored in the repository.
 
 ```sh
-git tag -a hostlet-skill-v0.2.4 -m "hostlet-skill 0.2.4"
-git push origin hostlet-skill-v0.2.4
+git tag -a hostlet-skill-v0.2.5 -m "hostlet-skill 0.2.5"
+git push origin hostlet-skill-v0.2.5
 ```
 
 ## Multiuser mode

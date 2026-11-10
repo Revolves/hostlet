@@ -41,6 +41,19 @@ test("skill manifest is a standalone public npm package", async () => {
   assert.match(script, /^#!\/usr\/bin\/env node/);
 });
 
+test("skill command map covers every CLI command", async () => {
+  const help = await run(process.execPath, ["cli/hostlet.js", "--help"]);
+  assert.equal(help.code, 0, help.stderr);
+  const commandSection = help.stdout.split("Commands:")[1]?.split("Environment:")[0];
+  assert.ok(commandSection, "CLI help should contain a command section");
+  const commands = commandSection.split(/\r?\n/).map((line) => line.trim().split(/\s+/)[0]).filter(Boolean);
+  assert.ok(commands.length > 0, "CLI help should list commands");
+  const skill = await fs.readFile(path.join(process.cwd(), "skills", "hostlet-publish", "SKILL.md"), "utf8");
+  for (const command of commands) {
+    assert.match(skill, new RegExp("`" + command + "(?:\\s|`)"), `SKILL.md should document the ${command} command`);
+  }
+});
+
 test("npm pack includes only the skill runtime and package docs", async (t) => {
   const cache = await fs.mkdtemp(path.join(os.tmpdir(), "hostlet-skill-pack-"));
   t.after(() => fs.rm(cache, { recursive: true, force: true }));

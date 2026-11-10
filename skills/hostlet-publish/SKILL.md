@@ -1,6 +1,6 @@
 ---
 name: hostlet-publish
-description: Publish and manage static HTML sites on Hostlet, including the official hostlet.cn service and self-hosted instances. Use when the user asks to register, sign in, create an API key, deploy, publish, replace, roll back, share, or inspect a Hostlet application.
+description: Publish and manage static HTML sites on Hostlet, including the official hostlet.cn service and self-hosted instances. Use when the user asks to register, sign in, create an API key, deploy, publish, replace, roll back, share, inspect, rename, change visibility of, delete a version of, or delete a Hostlet application.
 ---
 
 # Hostlet Publish
@@ -19,6 +19,42 @@ The installer places an isolated CLI runtime beside this file:
 `<skill-dir>` is the directory containing this `SKILL.md`, normally `$CODEX_HOME/skills/hostlet-publish`. Use the absolute path to that wrapper. On Windows, prefer `hostlet.ps1` when arguments may contain spaces; a `.cmd` wrapper can lose quoting when an agent launches it through an extra shell. Do not assume that `hostlet` is on `PATH` and do not install a second global copy unless the bundled wrapper is missing.
 
 If the wrapper is missing, reinstall with `npx hostlet-skill install`. To follow the newest published CLI explicitly, use `npx hostlet-skill@latest install --cli-version latest`; the default pinned CLI keeps a skill release reproducible. In a source checkout, `node cli/hostlet.js` remains a development fallback.
+
+## Command Map
+
+This map is the default reference. Do not run `--help` for a command listed here. Run `hostlet help <command>` only when a command is absent from this map or the CLI rejects an option as unknown.
+
+Read-only:
+
+- `workspaces [--json]`
+- `pages --workspace WORKSPACE_ID [--json]`
+- `versions --workspace WORKSPACE_ID --page PAGE_ID [--json]`
+- `publish-status --workspace WORKSPACE_ID --request-id REQUEST_ID [--json]`
+
+Publish:
+
+- New application: `publish SOURCE --workspace WORKSPACE_ID --title TITLE [--entry PATH] [--json]`
+- Replace release: `publish SOURCE --workspace WORKSPACE_ID --page PAGE_ID --revision REVISION [--entry PATH] [--json]`
+- Replacement does not use `--title`; call `rename` separately when the title must change.
+
+Manage:
+
+- `rollback --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION [--json]`
+- `visibility public|private --workspace WORKSPACE_ID --page PAGE_ID [--json]`
+- `rename --workspace WORKSPACE_ID --page PAGE_ID --title TITLE [--json]`
+- `delete-release --workspace WORKSPACE_ID --page PAGE_ID --release RELEASE_ID --revision REVISION [--json]`
+- `delete-app --workspace WORKSPACE_ID --page PAGE_ID --confirm [--json]`
+
+Account and shares:
+
+- `register --username NAME --password-stdin [--no-key] [--json]`
+- `login --identifier USERNAME_OR_EMAIL --password-stdin [--no-key] [--json]`
+- `whoami`, `logout`, `keys list`, `keys create`, `keys revoke`
+- `share --workspace WORKSPACE_ID --page PAGE_ID [--expires ISO] [--password-stdin] [--json]`
+- `shares --workspace WORKSPACE_ID --page PAGE_ID [--json]`
+- `revoke-share --workspace WORKSPACE_ID --page PAGE_ID --share SHARE_ID [--json]`
+
+All commands accept `--json`. If a documented management command reports an unknown command, the bundled CLI is older than this skill: print `--version`, reinstall the skill, and do not fall back to guessing another command.
 
 ## Account Setup
 
@@ -87,6 +123,15 @@ $env:HOSTLET_URL = 'https://hostlet.example.com'
 ```
 
 Use `--entry PATH` when a ZIP or directory contains multiple HTML entry files. Use `--page` and `--revision` only when replacing an existing application.
+
+To replace an existing application, list it first and use its current revision:
+
+```powershell
+& $hostlet pages --workspace WORKSPACE_ID --json
+& $hostlet publish ./dist --workspace WORKSPACE_ID --page PAGE_ID --revision REVISION --json
+```
+
+If the title also needs to change, use `rename` after publishing. `publish` ignores title-only changes during replacement.
 
 If the user has no account yet, run the account setup flow first, then `workspaces`, then publish. If the account exists but has no saved key, run `keys create --password-stdin`.
 
