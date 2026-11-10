@@ -275,3 +275,12 @@ sudo systemctl start hostlet
 - 公网验证：完成应用改名与改回、删除旧版本后确认 revision 递增且页面仍返回 200、创建临时应用后删除并确认应用列表恢复；测试未删除正式应用。
 - npm：`hostlet-cli@0.2.2` 与 `hostlet-skill@0.2.4` 已通过 Trusted Publishing 发布；`hostlet-skill@0.2.4` 默认固定依赖 `hostlet-cli@0.2.2`，默认安装后三条管理命令可直接使用。
 - 回滚方式：把 `/opt/hostlet/app` 指回 `/opt/hostlet/releases/20261110-3d92e5c` 并重启服务。
+
+## 2026-11-10 CLI 发布链接与技能确认
+
+- `hostlet-cli@0.2.3` 在发布成功后从实例 `/api/features` 推导应用地址，JSON 和文本结果返回 `applicationUrl` 与 `managementUrl`。域名托管返回应用子域，单 IP 托管返回内容端 `/p/<应用ID>/`；地址解析失败不会影响已经完成的发布。
+- `hostlet-skill@0.2.6` 要求在实际上传前确认实例、工作空间名称与 ID、标题、来源、新建或替换、替换时的 page/revision、入口文件和访问状态，并等待用户明确确认。发布成功后必须返回可点击页面链接；私有应用需注明登录要求，只有完成 `visibility public` 后才能称为公开链接。
+- 本地完整回归 400 项：398 通过、2 项按 Windows 平台条件跳过、0 失败；`npm run build` 通过，共 48 个模块。
+- GitHub 标签 `hostlet-cli-v0.2.3` 与 `hostlet-skill-v0.2.6` 的 CI、Publish CLI 和 Publish skill 工作流全部成功；npm 官方 registry 已确认 `hostlet-cli@0.2.3` 与 `hostlet-skill@0.2.6` 可安装。
+- 默认安装到 `C:\Users\xws\.codex\skills\hostlet-publish` 后，内置 `hostlet.cmd --version` 输出 `hostlet-cli 0.2.3`；已检查安装后的 `SKILL.md` 包含发布前确认和 `applicationUrl`/`managementUrl` 回传规则。
+- 本轮只修改 CLI、技能与文档，发布链接由 CLI 调用现有实例特性接口计算，因此无需重新部署网站服务端或调整生产 DNS。
