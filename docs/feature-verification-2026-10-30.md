@@ -12,6 +12,8 @@
 
 > 2026-11-10 发布方式切换：账号 `revolves` 的 npm 2FA 为 `auth-and-writes` 且仅绑定安全密钥，命令行无法提供 TOTP，改用 npm Trusted Publishing。`hostlet-skill` 的 Trusted Publisher 已绑定 `Revolves/hostlet` 与 `.github/workflows/publish-skill.yml`（允许 `npm publish` 与 `npm stage publish`）；推送标签 `hostlet-skill-v0.2.1` 后由 GitHub Actions 以 OIDC 身份发布，公共 registry 的 `latest` 已变为 `0.2.1`，发布过程不涉及任何长期令牌。随后在 Windows 临时目录执行 `npx --yes hostlet-skill@latest install --target <tmp>` 复核：技能结构与 `bin/hostlet.ps1` 均正常，内置 `hostlet-cli` 输出 `0.2.0`。后续发版只需同步 `skills/hostlet-publish/package.json` 版本并推送对应标签。
 
+> 2026-11-10 可见性命令与生产发布：`hostlet-cli@0.2.1` 新增 `visibility public|private`，通过 `/api/cli/workspaces/:id/pages/:id/visibility` 修改可见性（`publish` 权限，团队空间需所有者），并修复 `hostlet.ps1` 不转发管道输入导致 `--password-stdin` 失效的问题。本地 `npm run check`：390 项中 388 通过、2 项 Windows 条件跳过、0 失败，构建 48 个模块。生产部署 `3d92e5c` 到 `/opt/hostlet/releases/20261110-3d92e5c`（`/opt/hostlet/app` 原子切换），服务器端 390/390 通过、13 项部署冒烟全部通过；公网实测 `visibility private` 返回 401、`visibility public` 返回 200。`showcase/the-end-of-time` 以 revision 1 发布为公开应用 `w-08e11a575b619a23c7344fbfa314a974`（`https://w-08e11a575b619a23c7344fbfa314a974.apps.hostlet.cn/`），首页目录收录且访问计数增长。npm 侧 `hostlet-cli@0.2.1` 与 `hostlet-skill@0.2.2` 均由 Trusted Publishing 自动发布，`npm view` 确认 `latest` 分别为此两版。
+
 ## 本次验证
 
 - Windows、Node 22.21.1、npm 10.9.4：`npm test` 共 373 项，371 通过、0 失败、2 跳过。跳过项为“Windows 无符号链接能力”和“POSIX 文件权限不可用”，本次不将其计为通过。

@@ -258,3 +258,11 @@ sudo systemctl start hostlet
 - 优化依据：[Google AI features and your website](https://developers.google.com/search/docs/appearance/ai-features)，以可抓取正文、准确内容和与页面一致的结构化信息为基础。
 - 浏览器复验：英文首屏正常展示 Revolves 署名、GitHub 入口和英文 FAQ；点击中文链接后，标题、正文和 FAQ 切换为中文。
 - 额外全量测试运行在第 160 项后未继续输出，已停止等待；不将其记为全量通过。本次完成状态以相关 11 项测试、构建、公网响应及 13 项生产冒烟为依据。
+
+## 2026-11-10 可见性命令发布
+
+- 发布目录：`/opt/hostlet/releases/20261110-3d92e5c`，上一版本为 `/opt/hostlet/releases/20261109-96f234125a9f`；通过 `/opt/hostlet/app` 符号链接切换后重启 `hostlet` 服务。
+- 变更内容：`hostlet-cli@0.2.1` 新增 `visibility public|private`（`/api/cli` 路由放行 PATCH，要求 `publish` 权限，团队空间需所有者角色）；安装器生成的 `hostlet.ps1` 改为转发管道输入，修复 `--password-stdin` 失效。
+- 服务器端在发布目录执行 `npm test`：390 项全部通过、0 跳过、0 失败；`npm run build` 通过。切换后健康检查 200，`deploy/host/smoke-test.sh` 13 项全部通过。
+- 公网验证：对应用 `w-08e11a575b619a23c7344fbfa314a974` 执行 `visibility private` 后入口返回 401，执行 `visibility public` 后返回 200。
+- 回滚方式：把 `/opt/hostlet/app` 指回 `/opt/hostlet/releases/20261109-96f234125a9f` 并重启服务。
