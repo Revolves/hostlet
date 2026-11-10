@@ -63,7 +63,7 @@ For development, install from this checkout or build a local tarball:
 ```sh
 npm install -g ./cli
 npm pack ./cli
-npm install -g ./hostlet-cli-0.2.0.tgz
+npm install -g ./hostlet-cli-0.2.1.tgz
 ```
 
 Running from source remains supported with `node cli/hostlet.js ...` (or `npm run pack:cli` to build the tarball).
@@ -74,9 +74,10 @@ Register or sign in, create an API key, and publish without visiting the portal 
 hostlet register --username alice --password-stdin
 hostlet workspaces
 hostlet publish ./dist --workspace WORKSPACE_ID --title "Demo"
+hostlet visibility public --workspace WORKSPACE_ID --page PAGE_ID
 ```
 
-The account password is read from standard input and must contain at least 12 characters. `register` and `login` save the account session and a 30-day API key with read, publish, and share scopes; later commands read the saved token automatically. `HOSTLET_URL` is optional and defaults to `https://hostlet.cn`; set it for a custom instance. `HOSTLET_TOKEN` remains supported for automation and overrides the saved token. The target instance must expose the account credential flow and `/api/cli`. Do not use the administrator password as a token, and do not commit the token or write it to logs.
+The account password is read from standard input and must contain at least 12 characters. `register` and `login` save the account session and a 30-day API key with read, publish, and share scopes; later commands read the saved token automatically. `HOSTLET_URL` is optional and defaults to `https://hostlet.cn`; set it for a custom instance. `HOSTLET_TOKEN` remains supported for automation and overrides the saved token. The target instance must expose the account credential flow and `/api/cli`. New applications stay private until `hostlet visibility public` is run. Do not use the administrator password as a token, and do not commit the token or write it to logs.
 
 The official `hostlet.cn` deployment exposes username registration and account API credentials, so it can be used directly for CLI and Skill publishing. Username accounts cannot recover passwords by email yet; keep the password safe.
 

@@ -66,6 +66,15 @@ Replace an existing application:
 
 `CONFLICT` means the application changed. Read its current revision before retrying. New applications are private; publishing does not make them public.
 
+## Visibility
+
+```powershell
+& $hostlet visibility public --workspace WORKSPACE_ID --page PAGE_ID --json
+& $hostlet visibility private --workspace WORKSPACE_ID --page PAGE_ID --json
+```
+
+Requires the `publish` scope. A public application is accessible to anyone who knows its address, so run this only when the owner asks for it; team workspaces also require the owner role. The public URL is shown on the application card in the account portal.
+
 ## Uncertain Results
 
 The CLI prints the publication request ID to standard error before uploading.

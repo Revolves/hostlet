@@ -110,7 +110,7 @@ const commands=new Map([
       ['--json','Print machine-readable JSON.']
     ],
     notes:[
-      'Requires the publish scope. New applications are private; this command never publishes an application publicly.',
+      'Requires the publish scope. New applications are private; use "hostlet visibility public" when the owner asks for a public address.',
       'The request ID is written to stderr before upload. After a network error or an unconfirmed response, run publish-status before retrying with the same request ID and unchanged content.',
       'Directories must not contain hidden files, node_modules or symbolic links.'
     ]
@@ -136,6 +136,20 @@ const commands=new Map([
       ['--json','Print machine-readable JSON.']
     ],
     notes:['Requires the publish scope. On CONFLICT, re-read the application and retry with its latest revision.']
+  }],
+  ['visibility',{
+    summary:'Make an application public or private.',
+    usage:'hostlet visibility <public|private> --workspace <id> --page <id> [--json]',
+    options:[
+      ['--workspace <id>','Workspace ID.'],
+      ['--page <id>','Application ID.'],
+      ['--json','Print machine-readable JSON.']
+    ],
+    notes:[
+      'Requires the publish scope. A public application is reachable by anyone who knows its address.',
+      'Only change visibility when the application owner explicitly asks for it; team workspaces require the owner role.',
+      'The public address appears on the application card in the account portal.'
+    ]
   }],
   ['shares',{
     summary:'List share links for an application.',
@@ -690,6 +704,15 @@ async function main() {
     if (!opts['--workspace'] || !opts['--page'] || !opts['--share']) throw usageError();
     await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/shares/${encodeURIComponent(opts['--share'])}`,{method:'DELETE',action:'Share revocation'});
     output(opts['--json'] ? `${JSON.stringify({revoked:true,shareId:opts['--share']})}\n` : `Revoked share ${opts['--share']}.\n`);
+    return;
+  }
+  if (command==='visibility') {
+    const [value,...args]=rest;
+    const opts=options(args,['--workspace','--page','--json']);
+    if (!['public','private'].includes(value) || !opts['--workspace'] || !opts['--page']) throw usageError();
+    const result=await apiJson(base,token,`/api/cli/workspaces/${encodeURIComponent(opts['--workspace'])}/pages/${encodeURIComponent(opts['--page'])}/visibility`,{method:'PATCH',body:{visibility:value},action:'Visibility update'});
+    if (!result || result.visibility!==value) throw new Error('Visibility update returned an invalid response.');
+    output(opts['--json'] ? `${JSON.stringify(result)}\n` : `Application ${opts['--page']} is now ${value}.\n`);
     return;
   }
   const [input,...args]=rest;

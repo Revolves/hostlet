@@ -6,6 +6,8 @@
 
 ### Added
 
+- `hostlet-cli@0.2.1` 新增 `visibility public|private`，通过 `/api/cli` 修改应用可见性，无需再打开账户门户；团队空间仍要求所有者角色。
+- 安装器生成的 `hostlet.ps1` 现在转发管道输入，`login/register/keys create --password-stdin` 在 PowerShell 管道下不再卡住或报“0 字节”。
 - `hostlet-cli` 新增 `register`、`login`、`logout`、`whoami` 和 `keys list/create/revoke`，可从零完成注册、创建 API Key 和发布。
 - CLI 将账户会话和 API Key 保存到用户凭据文件（`HOSTLET_CONFIG` 可覆盖），后续命令自动读取；`HOSTLET_TOKEN` 继续兼容并优先使用。
 - `hostlet-skill` 安装器自带隔离 CLI 运行时和 `bin/hostlet` 包装脚本，无需全局安装 `hostlet-cli` 即可使用；新增 `--cli-version` 和 `--skip-cli`。

@@ -119,6 +119,15 @@ test("account sessions can manage their workspaces but cannot access legacy admi
   assert.equal((await hostedRequest('/')).status, 200);
   assert.equal((await changeVisibility('private')).status, 200);
   assert.equal((await hostedRequest('/')).status, 401);
+  assert.equal((await cli(readToken,`/pages/${page.id}/visibility`,{method:'PATCH',body:{visibility:'public'}})).status,401);
+  const cliPublic = await cli(publishToken,`/pages/${page.id}/visibility`,{method:'PATCH',body:{visibility:'public'}});
+  assert.equal(cliPublic.status,200);
+  assert.deepEqual(await cliPublic.json(),{visibility:'public'});
+  assert.equal((await hostedRequest('/')).status,200);
+  const cliPrivate = await cli(publishToken,`/pages/${page.id}/visibility`,{method:'PATCH',body:{visibility:'private'}});
+  assert.equal(cliPrivate.status,200);
+  assert.deepEqual(await cliPrivate.json(),{visibility:'private'});
+  assert.equal((await hostedRequest('/')).status,401);
   const adminRequest = (pathname, { method = "POST", body = {}, headers = {} } = {}) => new Promise((resolve, reject) => {
     const payload=method === 'GET' ? undefined : JSON.stringify(body);
     const req = http.request({ host: "127.0.0.1", port: server.address().port, path: pathname, method,

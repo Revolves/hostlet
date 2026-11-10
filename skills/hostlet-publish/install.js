@@ -173,7 +173,7 @@ async function writeWrappers(target) {
   await fs.mkdir(bin, { recursive: true });
   const posix = `#!/bin/sh\nexec node "$(dirname "$0")/../runtime/node_modules/hostlet-cli/hostlet.js" "$@"\n`;
   const cmd = `@echo off\r\nnode "%~dp0..\\runtime\\node_modules\\hostlet-cli\\hostlet.js" %*\r\n`;
-  const powershell = `#!/usr/bin/env pwsh\n& node "$PSScriptRoot/../runtime/node_modules/hostlet-cli/hostlet.js" @args\nexit $LASTEXITCODE\n`;
+  const powershell = `#!/usr/bin/env pwsh\n$script = "$PSScriptRoot/../runtime/node_modules/hostlet-cli/hostlet.js"\nif ($MyInvocation.ExpectingInput) { $input | & node $script @args }\nelse { & node $script @args }\nexit $LASTEXITCODE\n`;
   await fs.writeFile(path.join(bin, "hostlet"), posix);
   await fs.writeFile(path.join(bin, "hostlet.cmd"), cmd);
   await fs.writeFile(path.join(bin, "hostlet.ps1"), powershell);

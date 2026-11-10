@@ -802,7 +802,8 @@ export async function createApps({ config, db, clock, accountSender, retentionSe
       const readable=req.method==='GET' && (/^\/[^/]+\/pages(?:\/[^/]+(?:\/releases)?)?$/.test(p) || /^\/[^/]+\/publications\/[A-Za-z0-9_-]{22,128}$/.test(p));
       const publish=req.method==='POST' && /^\/[^/]+\/pages(?:\/[^/]+\/replace)?$/.test(p);
       const rollback=req.method==='POST' && /^\/[^/]+\/pages\/[^/]+\/releases\/[^/]+\/activate$/.test(p);
-      return readable || publish || rollback ? next() : res.sendStatus(404);
+      const visibilityChange=req.method==='PATCH' && /^\/[^/]+\/pages\/[^/]+\/visibility$/.test(p);
+      return readable || publish || rollback || visibilityChange ? next() : res.sendStatus(404);
     },createWorkspacePagesRouter({service:workspacePages,requireUser:cliUser,uploader:workspaceUploader,tempFiles,visibility,receiptFactory:()=>createPublicationIdempotency(db)}));
     if (hostingConfig) {
       platformAdmin = createPlatformAdminService({ db, defaultRegistrationEnabled: config.registrationEnabled });

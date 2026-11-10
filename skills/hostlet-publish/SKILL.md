@@ -69,7 +69,7 @@ Confirm from the request or existing context:
 2. The exact source boundary. Do not upload parent directories, hidden files, `node_modules`, secrets, or build caches.
 3. Whether this is a new application or a replacement. A replacement needs both `--page` and the current `--revision`.
 
-New applications are private by default. This skill must not make an application public.
+New applications are private by default. Only change visibility when the user explicitly asks for a public address.
 
 ## Publish
 
@@ -89,6 +89,15 @@ $env:HOSTLET_URL = 'https://hostlet.example.com'
 Use `--entry PATH` when a ZIP or directory contains multiple HTML entry files. Use `--page` and `--revision` only when replacing an existing application.
 
 If the user has no account yet, run the account setup flow first, then `workspaces`, then publish. If the account exists but has no saved key, run `keys create --password-stdin`.
+
+## Visibility
+
+```powershell
+& $hostlet visibility public --workspace WORKSPACE_ID --page PAGE_ID --json
+& $hostlet visibility private --workspace WORKSPACE_ID --page PAGE_ID --json
+```
+
+Public applications are reachable by anyone with the address, so confirm with the owner before switching. Team workspaces require the owner role. After a successful change, report the state and point the owner to the public link shown on the application card in the account portal.
 
 ## Confirm the Result
 

@@ -105,6 +105,12 @@ test("installer copies the skill with an isolated CLI runtime", async (t) => {
     assert.notEqual(spaced.code, 0);
     assert.match(spaced.stderr, /No saved account session/);
     assert.doesNotMatch(spaced.stderr, /^Usage:/);
+    assert.match(powershellSource, /ExpectingInput/);
+    const piped = await run("pwsh", [
+      "-NoProfile", "-Command",
+      `'wrapper-stdin-probe' | & '${path.join(target, "bin", "hostlet.ps1")}' login --identifier nobody --password-stdin`,
+    ], { env: { ...process.env, HOSTLET_URL: "http://127.0.0.1:1", HOSTLET_CONFIG: path.join(target, "wrapper-credentials.json") } });
+    assert.doesNotMatch(piped.stderr, /Password from stdin must contain/);
   }
 
   const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), "skills", "hostlet-publish", "package.json"), "utf8"));
