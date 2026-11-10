@@ -13,10 +13,10 @@ Source and documentation: <https://github.com/Revolves/hostlet/tree/master/skill
 
 The installer places an isolated CLI runtime beside this file:
 
-- Windows: `<skill-dir>\bin\hostlet.cmd`
+- Windows: `<skill-dir>\bin\hostlet.ps1`
 - macOS/Linux: `<skill-dir>/bin/hostlet`
 
-`<skill-dir>` is the directory containing this `SKILL.md`, normally `$CODEX_HOME/skills/hostlet-publish`. Use the absolute path to that wrapper. Do not assume that `hostlet` is on `PATH` and do not install a second global copy unless the bundled wrapper is missing.
+`<skill-dir>` is the directory containing this `SKILL.md`, normally `$CODEX_HOME/skills/hostlet-publish`. Use the absolute path to that wrapper. On Windows, prefer `hostlet.ps1` when arguments may contain spaces; a `.cmd` wrapper can lose quoting when an agent launches it through an extra shell. Do not assume that `hostlet` is on `PATH` and do not install a second global copy unless the bundled wrapper is missing.
 
 If the wrapper is missing, reinstall with `npx hostlet-skill install`. In a source checkout, `node cli/hostlet.js` remains a development fallback.
 

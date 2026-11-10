@@ -1,6 +1,6 @@
 # Hostlet CLI Reference
 
-Use the CLI bundled with the skill at `<skill-dir>/bin/hostlet` (Windows: `<skill-dir>\bin\hostlet.cmd`). Package page: <https://www.npmjs.com/package/hostlet-cli>. Source: <https://github.com/Revolves/hostlet/tree/master/cli>.
+Use the CLI bundled with the skill at `<skill-dir>/bin/hostlet` (Windows: `<skill-dir>\bin\hostlet.ps1`; prefer it when arguments may contain spaces). Package page: <https://www.npmjs.com/package/hostlet-cli>. Source: <https://github.com/Revolves/hostlet/tree/master/cli>.
 
 ## Configuration
 

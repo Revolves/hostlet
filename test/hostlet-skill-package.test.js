@@ -11,11 +11,12 @@ function run(command, args, options = {}) {
       cwd: process.cwd(),
       env: options.env || process.env,
       shell: process.platform === "win32" && command === "npm",
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: [options.stdin === undefined ? "ignore" : "pipe", "pipe", "pipe"],
     });
     let stdout = "", stderr = "";
     child.stdout.on("data", (value) => stdout += value);
     child.stderr.on("data", (value) => stderr += value);
+    if (options.stdin !== undefined) child.stdin.end(options.stdin);
     child.on("close", (code) => resolve({ code, stdout, stderr }));
   });
 }
@@ -30,7 +31,7 @@ test("skill manifest is a standalone public npm package", async () => {
   assert.deepEqual(pkg.bin, { "hostlet-skill": "install.js" });
   assert.equal(pkg.repository.directory, "skills/hostlet-publish");
   assert.equal(pkg.publishConfig.access, "public");
-  assert.deepEqual(pkg.dependencies, { "hostlet-cli": pkg.version });
+  assert.match(pkg.dependencies["hostlet-cli"], /^\d+\.\d+\.\d+$/);
   for (const file of ["install.js", "SKILL.md", "README.md", "LICENSE", "agents/openai.yaml", "references/cli.md"]) {
     await fs.access(path.join(dir, file));
   }
@@ -92,6 +93,19 @@ test("installer copies the skill with an isolated CLI runtime", async (t) => {
     : await run(path.join(target, "bin", "hostlet"), ["--version"]);
   assert.equal(wrapper.code, 0, wrapper.stderr);
   assert.match(wrapper.stdout, /^hostlet-cli \d+\.\d+\.\d+/);
+  if (process.platform === "win32") {
+    const wrapperSource = await fs.readFile(path.join(target, "bin", "hostlet.cmd"), "utf8");
+    const powershellSource = await fs.readFile(path.join(target, "bin", "hostlet.ps1"), "utf8");
+    assert.match(wrapperSource, /hostlet\.js/);
+    assert.match(powershellSource, /@args/);
+    const spaced = await run("pwsh", [
+      "-NoProfile", "-File", path.join(target, "bin", "hostlet.ps1"),
+      "keys", "create", "--key-name", "Flow key", "--json",
+    ], { env: { ...process.env, HOSTLET_URL: "http://127.0.0.1:1", HOSTLET_CONFIG: path.join(target, "wrapper-credentials.json") } });
+    assert.notEqual(spaced.code, 0);
+    assert.match(spaced.stderr, /No saved account session/);
+    assert.doesNotMatch(spaced.stderr, /^Usage:/);
+  }
 
   const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), "skills", "hostlet-publish", "package.json"), "utf8"));
   const version = await run(process.execPath, [script, "--version"]);

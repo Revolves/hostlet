@@ -24,7 +24,7 @@ hostlet-publish/
 Use the bundled wrapper from the skill:
 
 ```powershell
-& "$env:CODEX_HOME\skills\hostlet-publish\bin\hostlet.cmd" --version
+& "$env:CODEX_HOME\skills\hostlet-publish\bin\hostlet.ps1" --version
 ```
 
 Install into a project-local skills directory:
