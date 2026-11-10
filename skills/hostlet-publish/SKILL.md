@@ -99,13 +99,15 @@ The credentials file is stored in the user configuration directory, or at `HOSTL
 
 ## Before Upload
 
-Confirm from the request or existing context:
+Resolve these details from the request or existing context:
 
 1. Target instance, workspace, source file or directory, and application title.
 2. The exact source boundary. Do not upload parent directories, hidden files, `node_modules`, secrets, or build caches.
 3. Whether this is a new application or a replacement. A replacement needs both `--page` and the current `--revision`.
+4. Entry file for a ZIP or directory, if it is ambiguous.
+5. Final access state: private by default, or public only when explicitly requested.
 
-New applications are private by default. Only change visibility when the user explicitly asks for a public address.
+Before uploading, present a short confirmation block with the instance, workspace name and ID, application title, source path, new/replace mode, page ID and revision for a replacement, entry file, and access state. Ask for an explicit confirmation and wait for it. Do not treat an earlier general request to build the site as confirmation of these publication details.
 
 ## Publish
 
@@ -158,7 +160,19 @@ Public applications are reachable by anyone with the address, so confirm with th
 
 - Treat a successful CLI exit and a returned page ID as the publication result.
 - If the network or server response is uncertain, do not send a new publication blindly. Run `publish-status` with the printed request ID, then retry only with the same request ID and unchanged content if needed.
-- Report the application ID, title, workspace, revision, and private access state. Do not report a public URL unless another authorized step changed visibility.
+- Return the clickable `applicationUrl` from the JSON result, or the `managementUrl` when the instance cannot provide an application address. Do not omit both links.
+- Report the application ID, title, workspace, revision, and access state. For a private application, label the link as requiring sign-in; only call it a public link after a confirmed `visibility public` step.
+
+Example result to report:
+
+```text
+Published: "Site title"
+Workspace: WORKSPACE_NAME (WORKSPACE_ID)
+Application: PAGE_ID, revision REVISION
+Access: private
+Page: https://PAGE_ID.apps.example.com/
+Management: https://hostlet.example.com/account
+```
 
 ## More Detail
 

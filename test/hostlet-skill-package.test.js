@@ -54,6 +54,14 @@ test("skill command map covers every CLI command", async () => {
   }
 });
 
+test("skill requires publication confirmation and a returned page link", async () => {
+  const skill = await fs.readFile(path.join(process.cwd(), "skills", "hostlet-publish", "SKILL.md"), "utf8");
+  assert.match(skill, /explicit confirmation/i);
+  assert.match(skill, /applicationUrl/);
+  assert.match(skill, /managementUrl/);
+  assert.match(skill, /Do not omit both links/);
+});
+
 test("npm pack includes only the skill runtime and package docs", async (t) => {
   const cache = await fs.mkdtemp(path.join(os.tmpdir(), "hostlet-skill-pack-"));
   t.after(() => fs.rm(cache, { recursive: true, force: true }));

@@ -145,6 +145,8 @@ Use `--entry PATH` when a ZIP contains more than one HTML entry. Directories mus
 
 When replacing an application, pass both `--page` and the current `--revision`. A `CONFLICT` response means the application changed; re-read it and retry with the latest revision.
 
+Successful `publish` output includes `managementUrl` and, when the instance exposes its hosting address, `applicationUrl`. The application link is usable directly only when the application is public; private applications require sign-in through the management view.
+
 ## Unconfirmed results
 
 An unconfirmed network response does not prove whether a publication succeeded. The CLI prints the request ID to standard error before uploading. If the result is unknown:

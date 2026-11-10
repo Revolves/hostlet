@@ -6,6 +6,8 @@
 
 ### Added
 
+- `hostlet-cli@0.2.3` 发布成功后在 JSON 和文本结果中返回 `applicationUrl` 与 `managementUrl`；无法解析应用地址时仍保留发布结果和管理链接。
+- `hostlet-skill@0.2.6` 要求发布前向用户确认实例、空间、来源、标题、入口、新建/替换与访问状态，发布后必须返回可点击页面链接。
 - `hostlet-skill@0.2.5` 增加完整命令地图，明确替换发布不读取 `--title`，并要求已文档化命令不再反复执行 `--help`；新增命令覆盖测试，CLI 新增命令时会检查技能文档是否同步。
 - `hostlet-skill@0.2.4` 默认携带 `hostlet-cli@0.2.2`；新安装技能无需额外传 `--cli-version` 即可使用 `rename`、`delete-release` 与 `delete-app`。技能包与 CLI 版本同步已加入打包测试。
 - `hostlet-cli@0.2.2` 新增 `rename`、`delete-release` 与 `delete-app`，可在不打开门户的情况下改名、清理单个历史版本和删除应用；删除应用必须显式传 `--confirm`。

@@ -20,6 +20,10 @@ globalThis.fetch=async (url,options)=>{
   const bytes=file ? Buffer.from(await file.arrayBuffer()) : null;
   const method=options.method||'GET';
   await fs.appendFile(process.env.CAPTURE,JSON.stringify({url:String(url),method,headers:options.headers,filename:file?.name,bytes:bytes?.toString('base64')})+'\\n');
+  if(String(url).endsWith('/api/features')) {
+    const body=process.env.FEATURES_BODY || '{"hostingDomain":"apps.example.test"}';
+    return new Response(body,{status:200,headers:{'content-type':'application/json'}});
+  }
   if(process.env.FAIL_FETCH || process.env.FAIL_POST && method==='POST') throw new Error('secret transport error '+process.env.HOSTLET_TOKEN);
   const status=method==='GET' ? process.env.PREFLIGHT_STATUS || process.env.RESPONSE_STATUS || '200' : process.env.RESPONSE_STATUS || '200';
   const body=method==='GET' ? process.env.PREFLIGHT_BODY || process.env.RESPONSE_BODY || '{"status":"not_found"}' : process.env.RESPONSE_BODY || JSON.stringify({page:{id:'page',releaseId:'release'}});
@@ -34,7 +38,7 @@ globalThis.fetch=async (url,options)=>{
     let stdout='',stderr=''; child.stdout.on('data',v=>stdout+=v);child.stderr.on('data',v=>stderr+=v);
     const code=await new Promise(resolve=>child.on('close',resolve));
     const requests=await fs.readFile(capture,'utf8').then(s=>s.trim().split('\n').map(JSON.parse),()=>[]);
-    const request=requests.at(-1) || null;
+    const request=requests.filter(item=>!item.url.endsWith('/api/features')).at(-1) || null;
     assert.ok(!stdout.includes(token) && !stderr.includes(token));
     return {code,stdout,stderr,request,requests};
   }
@@ -62,7 +66,7 @@ test('publish sends a receipt before upload and hashes the exact file bytes',asy
   const result=await run(['publish',file,'--workspace','space','--title','Title','--json']);
   assert.equal(result.code,0);assert.equal(JSON.parse(result.stdout).page.id,'page');
   const id=result.request.headers['Idempotency-Key'];assert.match(id,/^[A-Za-z0-9_-]{22,128}$/);
-  assert.deepEqual(result.requests.map(r=>r.method),['GET','POST']);
+  assert.deepEqual(result.requests.map(r=>r.method),['GET','POST','GET']);
   assert.equal(result.requests[0].url,`https://example.test/api/cli/workspaces/space/publications/${id}`);
   assert.equal(result.requests[0].headers.Authorization,`Bearer ${token}`);
   assert.ok(result.stderr.indexOf(id)>=0 && result.stderr.indexOf(id)<result.stderr.indexOf('FETCH_STARTED'));
@@ -118,6 +122,19 @@ test('replacement sends the original ZIP bytes and preserves its target',async t
   assert.equal(result.request.headers['X-Content-SHA256'],createHash('sha256').update(bytes).digest('hex'));
 });
 
+test('publish returns application and management links',async t=>{
+  const {dir,run}=await fixture(t), file=path.join(dir,'index.html');
+  await fs.writeFile(file,'hello');
+  const domain=await run(['publish',file,'--workspace','space','--title','Title','--json'],{FEATURES_BODY:'{"hostingDomain":"apps.example.test"}'});
+  assert.equal(domain.code,0,domain.stderr);
+  const domainPayload=JSON.parse(domain.stdout);
+  assert.equal(domainPayload.applicationUrl,'https://page.apps.example.test/');
+  assert.equal(domainPayload.managementUrl,'https://example.test/account');
+  const ip=await run(['publish',file,'--workspace','space','--title','Title','--json'],{FEATURES_BODY:'{"ipHostingOrigin":"https://203.0.113.10:8443"}'});
+  assert.equal(ip.code,0,ip.stderr);
+  assert.equal(JSON.parse(ip.stdout).applicationUrl,'https://203.0.113.10:8443/p/page/');
+});
+
 test('unexpected status and publish responses do not report success',async t=>{
   const {dir,run}=await fixture(t), file=path.join(dir,'index.html');await fs.writeFile(file,'hello');
   const status=await run(['publish-status','--workspace','space','--request-id',key,'--json'],{RESPONSE_STATUS:'404',RESPONSE_BODY:'{"error":"missing endpoint"}'});
@@ -153,7 +170,7 @@ test('preflight accepts known statuses but never treats succeeded as the current
   for (const [status,http] of [['not_found','404'],['not_found','200'],['interrupted','200'],['in_progress','200'],['succeeded','200']]) {
     const result=await run(args,{PREFLIGHT_STATUS:http,PREFLIGHT_BODY:JSON.stringify({status,result:{page:{id:'previous'}}})});
     assert.equal(result.code,0,`${status} ${result.stderr}`);
-    assert.deepEqual(result.requests.map(r=>r.method),['GET','POST']);
+    assert.deepEqual(result.requests.map(r=>r.method),['GET','POST','GET']);
     assert.equal(result.requests[1].headers['Idempotency-Key'],key);
     assert.equal(JSON.parse(result.stdout).page.id,'page');
   }

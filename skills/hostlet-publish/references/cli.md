@@ -68,6 +68,8 @@ Replace an existing application:
 
 `--title` is only used for a new application. It is ignored during replacement; use `rename` if the title must change. `CONFLICT` means the application changed. Read its current revision before retrying. New applications are private; publishing does not make them public.
 
+On success, JSON output includes `applicationUrl` when the instance exposes a hosting address, plus `managementUrl`. Report the application link to the user; for a private application, state that sign-in is required. If `applicationUrl` is unavailable, report `managementUrl` and the page ID.
+
 ## Visibility
 
 ```powershell

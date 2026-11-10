@@ -553,6 +553,27 @@ async function publicationStatus(base,token,workspace,requestId) {
   if (!result || typeof result!=='object' || Array.isArray(result) || !['not_found','in_progress','interrupted','succeeded'].includes(result.status)) throw new Error('Invalid status response.');
   return result;
 }
+async function applicationAddress(base,pageId) {
+  if (!/^[A-Za-z0-9-]+$/.test(pageId)) return null;
+  try {
+    const response=await fetch(new URL('/api/features',base),{redirect:'error'});
+    if (!response.ok) return null;
+    const features=await response.json();
+    if (typeof features?.ipHostingOrigin==='string') {
+      const origin=new URL(features.ipHostingOrigin);
+      if (!['https:','http:'].includes(origin.protocol) || origin.username || origin.password || origin.pathname!=='/' || origin.search || origin.hash) return null;
+      return new URL(`/p/${encodeURIComponent(pageId)}/`,origin).href;
+    }
+    if (typeof features?.hostingDomain==='string' && features.hostingDomain) {
+      const address=new URL(`https://${pageId}.${features.hostingDomain}/`);
+      if (address.hostname!==`${pageId}.${features.hostingDomain.split(':')[0]}`) return null;
+      return address.href;
+    }
+  } catch {
+    // The publication already succeeded; a missing link must not turn it into a failed publish.
+  }
+  return null;
+}
 async function main() {
   const [command,...rest]=process.argv.slice(2);
   if (!command) {
@@ -805,9 +826,12 @@ async function main() {
   let body;try {body=await response.json();} catch {throw new Error(`Publish result unknown (HTTP ${response.status}; invalid response). ${recovery}`);}
   if (!response.ok) throw new Error(`Publish was not confirmed (HTTP ${response.status}). ${recovery}`);
   if (!body?.page?.id || !body.page.releaseId) throw new Error(`Publish result unknown (invalid response). ${recovery}`);
-  const result={page:body.page,managementUrl:new URL('/account',base).href};
+  const managementUrl=new URL('/account',base).href;
+  const applicationUrl=await applicationAddress(base,body.page.id);
+  const result={page:body.page,applicationUrl,managementUrl};
   const replayed=preflight.status==='succeeded' || response.headers.get('Idempotency-Replayed')==='true';
-  const message=replayed ? `Original publication request confirmed. For the current page state, check the page or open the management view at ${result.managementUrl}.` : `Published private application ${body.page.id} (version ${body.page.releaseId}). Manage it at ${result.managementUrl}`;
+  const link=applicationUrl ? `\nApplication link: ${applicationUrl}` : '';
+  const message=replayed ? `Original publication request confirmed. For the current page state, check the page or open the management view at ${managementUrl}.${link}` : `Published private application ${body.page.id} (version ${body.page.releaseId}). Manage it at ${managementUrl}.${link}`;
   if (opts['--json'] && replayed) outputError(`${message}\n`);
   output(opts['--json'] ? `${JSON.stringify(result)}\n` : `${message}\n`);
 }

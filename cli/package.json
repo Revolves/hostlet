@@ -1,6 +1,6 @@
 {
   "name": "hostlet-cli",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Command-line client for publishing and managing static applications on Hostlet.",
   "license": "MIT",
   "author": "Hostlet contributors",

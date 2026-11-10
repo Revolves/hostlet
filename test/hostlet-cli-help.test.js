@@ -7,7 +7,7 @@ import {spawn} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 
 const token='T'.repeat(43);
-const commands=['register','login','logout','whoami','keys','workspaces','pages','versions','publish','publish-status','rollback','shares','share','revoke-share'];
+const commands=['register','login','logout','whoami','keys','workspaces','pages','versions','publish','publish-status','rollback','visibility','rename','delete-app','delete-release','shares','share','revoke-share'];
 
 async function fixture(t) {
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'hostlet-cli-help-test-'));
