@@ -1,5 +1,7 @@
 # 安全事件日志
 
+漏洞报告和测试规则见 [SECURITY.md](../SECURITY.md)；当前版本、官方实例和部署口径见[项目当前状态](project-status.md)。
+
 服务默认将脱敏后的接口请求结果写入 `DATA_DIR/security-logs/`，每个 UTC 日期一个 `security-YYYY-MM-DD.ndjson` 文件，默认保留 180 天，可用 `SECURITY_LOG_RETENTION_DAYS` 调整为 1–3650 天。文件以追加方式写入；目录已存在时也会在写入前收紧为仅运行用户可访问，Linux 上目录模式为 `0700`、文件为 `0600`。清理只处理符合 `security-YYYY-MM-DD.ndjson` 名称的普通文件，不会遍历其他目录。
 
 每条记录只包含服务器生成的字段：

@@ -1,5 +1,7 @@
 # Single-IP Trusted Deployment Implementation Plan
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 > **For agentic workers:** Use subagent-driven-development; track each independently verifiable task below.
 
 **Goal:** Support explicitly enabled single-IP deployment for trusted users with separate management and content ports.

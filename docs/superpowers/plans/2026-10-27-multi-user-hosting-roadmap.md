@@ -1,5 +1,7 @@
 # 多用户应用托管实施路线
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 **目标：** 将现有单管理员 HTML 托管工具演进为支持个人、团队及自部署的开源前端应用托管平台。
 
 **设计依据：** `docs/superpowers/specs/2026-10-27-multi-user-hosting-design.md`。

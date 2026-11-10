@@ -1,5 +1,7 @@
 # Bilingual UI implementation
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 Approved scope: browser-language default, remembered Simplified Chinese / English switch, platform-owned UI and private access screens. Uploaded documents remain unchanged. Mark removal is implemented as removal of Hostlet brand text in platform screens; file-type and access indicators remain available.
 
 1. Add a shared pure translation catalog and frontend language store, with guarded localStorage access and document language updates.

@@ -1,5 +1,7 @@
 # 阶段 0 私有应用授权实验计划与结果
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 **目标：** 在独立、一次性、本地 HTTP 实验中验证私有应用票据兑换和资源授权，不改动生产系统。
 
 **范围与设计：** `auth.localhost` 是模拟可信授权域，`a.localhost` 和 `b.localhost` 是两个不同应用 origin；全部仅绑定回环。可信域使用固定演示密码签发 30 秒有效、随机、单次且绑定应用的票据，303 跳转到该应用 `/exchange`。兑换后设置无 Domain 的 HttpOnly、SameSite=Lax、Path=/、60 秒 host-only cookie，再重定向到不含票据的 `/`。每次 HTML、CSS、JS、图片请求都检查服务端内存会话的应用和有效期；可信域撤销会删除该应用所有未兑换票据及会话。固定资源为代码中的演示字符串，不访问现有 data 或上传文件。仅允许三个精确 Host，包含实际监听端口；其他 Host 返回 421。

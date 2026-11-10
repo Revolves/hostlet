@@ -16,7 +16,7 @@ npx serve showcase/hostlet
 
 ## 发布
 
-将 `showcase/hostlet` 目录打包为 ZIP 后上传，入口文件为 `index.html`，标题为 `Hostlet · 把作品发布成一个地址`，访问路径建议使用 `hostlet`。
+当前工作空间发布使用 `hostlet publish`，入口文件为 `index.html`，标题为 `Hostlet · 把作品发布成一个地址`，发布后使用随机应用 ID 子域。`/p/hostlet/` 仅用于保留历史短地址的单管理员页面。
 
 应用应保持公开状态，以便出现在官网公开目录中。
 

@@ -1,5 +1,7 @@
 # Idempotent Publishing Implementation Plan
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 > **For agentic workers:** Use subagent-driven-development and test-first implementation.
 
 **Goal:** Make CLI publication safely retryable and queryable after uncertain network results.

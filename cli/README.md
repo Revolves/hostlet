@@ -4,7 +4,7 @@ Publish and manage static applications on [Hostlet](https://hostlet.cn) or a sel
 
 ## Status
 
-Published on npm as [`hostlet-cli`](https://www.npmjs.com/package/hostlet-cli). The source lives in the [Hostlet GitHub repository](https://github.com/Revolves/hostlet/tree/master/cli).
+Current release: `hostlet-cli@0.2.3`. Published on npm as [`hostlet-cli`](https://www.npmjs.com/package/hostlet-cli). The source lives in the [Hostlet GitHub repository](https://github.com/Revolves/hostlet/tree/master/cli). See the [project status](../docs/project-status.md) for the current product, package and deployment summary.
 
 ## Requirements
 
@@ -38,7 +38,7 @@ Running from a packed tarball remains supported:
 
 ```sh
 npm pack ./cli
-npm install -g ./hostlet-cli-0.2.0.tgz
+npm install -g ./hostlet-cli-0.2.3.tgz
 ```
 
 ## Zero to publish

@@ -1,5 +1,7 @@
 # 轻量发布审核实施计划
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 目标和边界见 [设计](../specs/2026-11-02-lightweight-publication-review-design.md)。使用现有 SQLite、Express 和 React；不操作现有服务器数据。
 
 1. 在临时数据库测试个人和团队角色、提交、批准、驳回、过期版本和审计事务；增加迁移及审核服务，保留既有公开页面。

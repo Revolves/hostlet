@@ -1,5 +1,7 @@
 # 工作空间本机 HTTPS 浏览器验证
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 2026-10-28 使用实际工作空间服务、合成账号和独立 Chrome 无头实例验证托管流程。实验在本机使用临时 SQLite 数据库、临时文件和一次性自签名证书；浏览器测试上下文明确忽略证书验证。管理域为 `admin.hostlet.localhost`，应用使用 `*.apps.localhost`，测试 API 也位于本机。邮件由测试发送器模拟，未连接真实 SMTP。结束时关闭浏览器和服务并移除临时数据。
 
 构建后，可在具备 Playwright、Chrome 和 OpenSSL 的环境设置三个绝对路径并执行 `node --no-warnings=ExperimentalWarning test/isolation-lab/workspace-https-browser.mjs`：

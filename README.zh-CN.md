@@ -1,5 +1,7 @@
 # Hostlet
 
+**语言：** 简体中文 | [English](README.md)
+
 ## 你的网站，应该由你做主
 
 你的网站，不仅仅属于一个产品。
@@ -7,6 +9,8 @@
 Hostlet 是一个 MIT 开源的前端页面托管平台，面向个人创作者和需要分享演示的团队。多用户功能包括邮箱账号、个人和团队空间、申请审批、HTML/ZIP 上传、私有访问、分享及版本回滚；也保留原有单管理员模式。平台只托管静态文件，应用脚本在访客浏览器中运行，不提供用户服务端或应用数据库。
 
 多用户功能已完成并在官方实例运行；自建实例在面向不受信任用户开放前，仍须在目标环境完成 HTTPS、域名、邮件、权限隔离、备份恢复和内容治理验收。官方实例为 <https://hostlet.cn>，当前采用单域多用户模式并开放用户名注册；公开宣传应用位于 <https://hostlet.cn/p/hostlet/>。
+
+当前版本状态（2026-11-10）：`hostlet-cli@0.2.3`、`hostlet-skill@0.2.6`；最新完整回归 400 项、2 项平台条件跳过，生产构建 48 个模块通过。产品、版本和部署的统一口径见[项目当前状态](docs/project-status.md)。
 
 源码、Issue 与版本发布：<https://github.com/Revolves/hostlet>。
 
@@ -46,7 +50,7 @@ hostlet --help
 ```sh
 npm install -g ./cli
 npm pack ./cli
-npm install -g ./hostlet-cli-0.2.0.tgz
+npm install -g ./hostlet-cli-0.2.3.tgz
 ```
 
 仍支持从源码运行 `node cli/hostlet.js ...`，也可用 `npm run pack:cli` 生成 tarball。
@@ -95,7 +99,7 @@ CLI 在发送前将请求 ID 写入标准错误（使用 `--json` 时也如此�
 
 发布前 CLI 使用相同请求 ID 查询状态接口；只有返回合法 JSON 状态的服务才会收到上传。旧服务的普通 404、鉴权失败和网络错误会中止上传。状态接口和发布接口必须由同一套正确实现幂等协议的服务提供；混合部署或错误配置仍需在部署时验证。当前成功回执不自动过期，账号注销或工作空间删除时会清除对应回执；长期存储增长和回执清理策略仍待处理。CLI 已发布到公共 npm registry，也仍可从源码或本地 tarball 安装；尚未在 Linux 和 macOS 实机验证全部命令。接口的限流为单进程限制，公开部署仍需入口限流。
 
-Agent Skill 已发布到 npm，包名为 [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill)，源码位于 [`skills/hostlet-publish/`](skills/hostlet-publish/)。官网首页提供可一键复制的 `npx --yes hostlet-skill@latest install` 命令，以及只负责安装、不提前触发账号授权或发布的 AI 助手提示词。安装器默认把 Skill 写入 `$CODEX_HOME/skills/hostlet-publish`，并同时安装隔离的 CLI 到 `bin/hostlet`（Windows 为 `bin/hostlet.cmd`），无需再全局安装 CLI。可用 `--target` 指定其他 skills 目录；只有在已全局安装 `hostlet` 或离线环境时才使用 `--skip-cli`。Skill 默认官方 `https://hostlet.cn`，通过 `HOSTLET_URL` 切换自建实例。它支持注册、登录、创建 API Key 和发布，但必须先获得用户确认；密码只能通过标准输入传递。发布前必须向用户确认实例、工作空间、来源目录、标题、入口文件、新建或替换状态和访问状态；密码只能通过标准输入传递。不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后必须返回可点击的页面链接；如果实例未提供应用地址，则返回管理链接和应用 ID。如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
+Agent Skill 已发布到 npm，包名为 [`hostlet-skill`](https://www.npmjs.com/package/hostlet-skill)，源码位于 [`skills/hostlet-publish/`](skills/hostlet-publish/)。官网首页提供可一键复制的 `npx --yes hostlet-skill@latest install` 命令，以及只负责安装、不提前触发账号授权或发布的 AI 助手提示词。安装器默认把 Skill 写入 `$CODEX_HOME/skills/hostlet-publish`，并同时安装隔离的 CLI 到 `bin/hostlet`；Windows 优先使用 `bin/hostlet.ps1`，保留 `bin/hostlet.cmd` 兼容，但后者经额外 shell 转发时可能拆分含空格参数。无需再全局安装 CLI。可用 `--target` 指定其他 skills 目录；只有在已全局安装 `hostlet` 或离线环境时才使用 `--skip-cli`。Skill 默认官方 `https://hostlet.cn`，通过 `HOSTLET_URL` 切换自建实例。它支持注册、登录、创建 API Key 和发布，但注册、建 Key 与发布前都必须先获得用户确认。发布前必须确认实例、工作空间名称与 ID、来源目录、标题、入口文件、新建或替换状态、替换时的 page/revision 和访问状态。密码只能通过标准输入传递，不要读取、打印或回传凭据值，也不要自动将应用设为公开。发布成功后必须返回可点击的页面链接；如果实例未提供应用地址，则返回管理链接和应用 ID，私有应用须注明需要登录。如果响应丢失，保存请求 ID 并按上述状态查询流程处理。
 
 ## 参与贡献
 

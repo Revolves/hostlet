@@ -1,5 +1,7 @@
 # Hostlet
 
+**Language:** [简体中文](README.zh-CN.md) | English
+
 ## Your website, your call
 
 Your website belongs to more than any one product.
@@ -9,6 +11,8 @@ An open-source platform for hosting and sharing static frontend applications, wi
 Multiuser mode is implemented and runs on the official instance. Review the [deployment guidance](docs/deployment.md) and security notes before exposing a self-hosted instance to untrusted users. See also the [Chinese quick start](README.zh-CN.md).
 
 Official instance: <https://hostlet.cn>. It runs single-domain multiuser hosting with username registration. Public showcase: <https://hostlet.cn/p/hostlet/>.
+
+Current release status (2026-11-10): `hostlet-cli@0.2.3`, `hostlet-skill@0.2.6`; the latest full check passed 400 tests with 2 platform skips, and the production build passed 48 modules. See [project status](docs/project-status.md) for the canonical product, version and deployment summary.
 
 Hostlet is open source under the [MIT License](LICENSE).
 
@@ -63,7 +67,7 @@ For development, install from this checkout or build a local tarball:
 ```sh
 npm install -g ./cli
 npm pack ./cli
-npm install -g ./hostlet-cli-0.2.1.tgz
+npm install -g ./hostlet-cli-0.2.3.tgz
 ```
 
 Running from source remains supported with `node cli/hostlet.js ...` (or `npm run pack:cli` to build the tarball).
@@ -114,7 +118,7 @@ The publishing skill is published on npm as [`hostlet-skill`](https://www.npmjs.
 npx --yes hostlet-skill@latest install
 ```
 
-The public homepage provides a copyable version of this command and an AI-assistant setup prompt. The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default and bundles an isolated CLI at `bin/hostlet` (Windows: `bin/hostlet.ps1`; `bin/hostlet.cmd` is kept for compatibility but splits arguments that contain spaces), so no global CLI install is required. Use `--target` for another skills directory; `--skip-cli` is available only when a global `hostlet` already exists or the environment is offline. The skill defaults to the official `https://hostlet.cn` instance and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation before registering an account or creating a key, never accepts a password in command arguments, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
+The public homepage provides a copyable version of this command and an AI-assistant setup prompt. The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default and bundles an isolated CLI at `bin/hostlet` (Windows: `bin/hostlet.ps1`; `bin/hostlet.cmd` is kept for compatibility but splits arguments that contain spaces), so no global CLI install is required. Use `--target` for another skills directory; `--skip-cli` is available only when a global `hostlet` already exists or the environment is offline. The skill defaults to the official `https://hostlet.cn` instance and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation before registering an account, creating a key, or publishing; the publication confirmation includes the instance, workspace, source, title, entry, new/replace mode and access state. It keeps new applications private by default, never accepts or prints secrets, returns the application or management link after a successful publish, and checks uncertain publication requests before retrying.
 
 The CLI bundled with each skill release is pinned for reproducible installs. To follow the newest published CLI explicitly, run `npx --yes hostlet-skill@latest install --cli-version latest`.
 

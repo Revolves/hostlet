@@ -2,10 +2,12 @@
 
 Agent skill for publishing static applications to [Hostlet](https://hostlet.cn). The installer bundles an isolated copy of [`hostlet-cli`](https://www.npmjs.com/package/hostlet-cli), so the skill works without a global CLI install.
 
+Current release: `hostlet-skill@0.2.6`, which pins `hostlet-cli@0.2.3`. See the [project status](../../docs/project-status.md) for the current product, package and deployment summary.
+
 ## Install
 
 ```sh
-npx hostlet-skill install
+npx --yes hostlet-skill@latest install
 ```
 
 The command above uses the CLI version pinned by the skill release for reproducible installs. To track the newest published CLI instead, use a dist-tag explicitly:
@@ -59,6 +61,8 @@ $hostlet = "$env:CODEX_HOME\skills\hostlet-publish\bin\hostlet.cmd"
 ```
 
 Pass the password through standard input. Do not place it in a command-line argument, a log, or a file. Registration and login save the API token in the Hostlet credentials file; later commands read it automatically.
+
+Before running `publish`, confirm the instance, workspace name and ID, source path, title, entry file, new/replace mode, page ID and revision for a replacement, and final access state with the user. After a successful publish, return `applicationUrl` or `managementUrl`; label a private application link as requiring sign-in.
 
 For an existing account:
 

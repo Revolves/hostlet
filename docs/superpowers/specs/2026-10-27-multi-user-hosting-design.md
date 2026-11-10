@@ -1,5 +1,7 @@
 # Hostlet 多用户应用托管设计
 
+> 历史记录 / Historical record：本文保留当时内容。当前口径见[项目当前状态 / Project status](../../project-status.md)。
+
 日期：2026-10-27
 
 ## 目标与范围

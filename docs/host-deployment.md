@@ -2,6 +2,8 @@
 
 本方案不使用 Docker：Node.js 由 systemd 运行，Nginx 作为唯一公网入口。它面向单域实例（单管理员或单域多用户），官网、管理工作台和 `/p/<slug>/` 托管页面共用管理域；多用户应用使用 `*.apps` 子域。`www` 入口统一 301 到裸域。
 
+> 当前口径（2026-11-10）：官方实例 `hostlet.cn` 采用单域多用户模式，当前仅开放用户名注册；用户应用地址为 `https://<应用ID>.apps.hostlet.cn/`。最新 npm 版本为 `hostlet-cli@0.2.3` 与 `hostlet-skill@0.2.6`，最新完整回归为 400 项、398 通过、2 项平台条件跳过、0 失败，构建 48 个模块。统一状态见[项目当前状态](project-status.md)。
+
 仓库中的模板位于 [`deploy/host/`](../deploy/host/)：
 
 - `bootstrap-ubuntu.sh`：安装 Node.js 22、Nginx、Certbot 和基础工具，并创建 `hostlet` 系统用户。
@@ -125,7 +127,7 @@ APPS_DOMAIN=apps.hostlet.cn
 
 单域模式会把管理端和应用从“跨站”降为“同站、跨 origin”。代码会使用 `__Host-` 前缀的管理和账户 Cookie、host-only Cookie、严格的 Origin 校验和既有 CSP；但 `SameSite` 不再提供跨站边界，安全隔离弱于双域模式。这个模式适合开源演示或受控使用，不建议作为面向不可信公网用户的最强隔离方案。默认 `SINGLE_DOMAIN_HOSTING=false`，未显式开启时仍拒绝同注册域应用。
 
-截至 2026-11-09，`hostlet.cn` 已启用单域多用户模式：`MULTIUSER_ENABLED=true`、`REGISTRATION_ENABLED=true`、`USERNAME_REGISTRATION_ENABLED=true`、`SINGLE_DOMAIN_HOSTING=true`、`APPS_DOMAIN=apps.hostlet.cn`。注册方式当前只开放用户名，邮箱注册和邮件找回密码尚未启用。宣传展示页 `https://hostlet.cn/p/hostlet/` 继续作为公开应用展示。
+截至 2026-11-10，`hostlet.cn` 已启用单域多用户模式：`MULTIUSER_ENABLED=true`、`REGISTRATION_ENABLED=true`、`USERNAME_REGISTRATION_ENABLED=true`、`SINGLE_DOMAIN_HOSTING=true`、`APPS_DOMAIN=apps.hostlet.cn`。注册方式当前只开放用户名，邮箱注册和邮件找回密码尚未启用。宣传展示页 `https://hostlet.cn/p/hostlet/` 继续作为公开应用展示。
 
 ## 启动应用
 
