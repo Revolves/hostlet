@@ -18,7 +18,7 @@ The installer places an isolated CLI runtime beside this file:
 
 `<skill-dir>` is the directory containing this `SKILL.md`, normally `$CODEX_HOME/skills/hostlet-publish`. Use the absolute path to that wrapper. On Windows, prefer `hostlet.ps1` when arguments may contain spaces; a `.cmd` wrapper can lose quoting when an agent launches it through an extra shell. Do not assume that `hostlet` is on `PATH` and do not install a second global copy unless the bundled wrapper is missing.
 
-If the wrapper is missing, reinstall with `npx hostlet-skill install`. In a source checkout, `node cli/hostlet.js` remains a development fallback.
+If the wrapper is missing, reinstall with `npx hostlet-skill install`. To follow the newest published CLI explicitly, use `npx hostlet-skill@latest install --cli-version latest`; the default pinned CLI keeps a skill release reproducible. In a source checkout, `node cli/hostlet.js` remains a development fallback.
 
 ## Account Setup
 

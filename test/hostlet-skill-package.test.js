@@ -24,6 +24,7 @@ function run(command, args, options = {}) {
 test("skill manifest is a standalone public npm package", async () => {
   const dir = path.join(process.cwd(), "skills", "hostlet-publish");
   const pkg = JSON.parse(await fs.readFile(path.join(dir, "package.json"), "utf8"));
+  const cliPkg = JSON.parse(await fs.readFile(path.join(process.cwd(), "cli", "package.json"), "utf8"));
   assert.equal(pkg.name, "hostlet-skill");
   assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
   assert.equal(pkg.private, undefined);
@@ -32,6 +33,7 @@ test("skill manifest is a standalone public npm package", async () => {
   assert.equal(pkg.repository.directory, "skills/hostlet-publish");
   assert.equal(pkg.publishConfig.access, "public");
   assert.match(pkg.dependencies["hostlet-cli"], /^\d+\.\d+\.\d+$/);
+  assert.equal(pkg.dependencies["hostlet-cli"], cliPkg.version);
   for (const file of ["install.js", "SKILL.md", "README.md", "LICENSE", "agents/openai.yaml", "references/cli.md"]) {
     await fs.access(path.join(dir, file));
   }

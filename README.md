@@ -116,13 +116,15 @@ npx --yes hostlet-skill@latest install
 
 The public homepage provides a copyable version of this command and an AI-assistant setup prompt. The installer copies the skill into `$CODEX_HOME/skills/hostlet-publish` by default and bundles an isolated CLI at `bin/hostlet` (Windows: `bin/hostlet.ps1`; `bin/hostlet.cmd` is kept for compatibility but splits arguments that contain spaces), so no global CLI install is required. Use `--target` for another skills directory; `--skip-cli` is available only when a global `hostlet` already exists or the environment is offline. The skill defaults to the official `https://hostlet.cn` instance and switches to a self-hosted instance through `HOSTLET_URL`. It requires confirmation before registering an account or creating a key, never accepts a password in command arguments, keeps new applications private, never prints the token, and checks uncertain publication requests before retrying.
 
+The CLI bundled with each skill release is pinned for reproducible installs. To follow the newest published CLI explicitly, run `npx --yes hostlet-skill@latest install --cli-version latest`.
+
 ### Releasing the skill package
 
 Bump `skills/hostlet-publish/package.json` and push a matching tag; the `Publish skill` workflow validates the tag against the manifest and publishes through npm Trusted Publishing, so no token or one-time password is stored in the repository.
 
 ```sh
-git tag -a hostlet-skill-v0.2.1 -m "hostlet-skill 0.2.1"
-git push origin hostlet-skill-v0.2.1
+git tag -a hostlet-skill-v0.2.4 -m "hostlet-skill 0.2.4"
+git push origin hostlet-skill-v0.2.4
 ```
 
 ## Multiuser mode

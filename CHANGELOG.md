@@ -6,6 +6,7 @@
 
 ### Added
 
+- `hostlet-skill@0.2.4` 默认携带 `hostlet-cli@0.2.2`；新安装技能无需额外传 `--cli-version` 即可使用 `rename`、`delete-release` 与 `delete-app`。技能包与 CLI 版本同步已加入打包测试。
 - `hostlet-cli@0.2.2` 新增 `rename`、`delete-release` 与 `delete-app`，可在不打开门户的情况下改名、清理单个历史版本和删除应用；删除应用必须显式传 `--confirm`。
 - `hostlet-cli@0.2.1` 新增 `visibility public|private`，通过 `/api/cli` 修改应用可见性，无需再打开账户门户；团队空间仍要求所有者角色。
 - 安装器生成的 `hostlet.ps1` 现在转发管道输入，`login/register/keys create --password-stdin` 在 PowerShell 管道下不再卡住或报“0 字节”。

@@ -8,6 +8,12 @@ Agent skill for publishing static applications to [Hostlet](https://hostlet.cn).
 npx hostlet-skill install
 ```
 
+The command above uses the CLI version pinned by the skill release for reproducible installs. To track the newest published CLI instead, use a dist-tag explicitly:
+
+```sh
+npx hostlet-skill@latest install --cli-version latest
+```
+
 The installer writes the skill and its CLI runtime into `$CODEX_HOME/skills/hostlet-publish` by default:
 
 ```text
@@ -65,7 +71,7 @@ For an existing account:
 ## Options
 
 - `--target <dir>` writes to another skills directory.
-- `--cli-version <ver>` installs a specific `hostlet-cli` version from npm instead of using the pinned dependency.
+- `--cli-version <ver>` installs a specific `hostlet-cli` version, or `latest` to use the newest npm release, instead of using the pinned dependency.
 - `--skip-cli` copies only the skill files. Use this only when `hostlet` is already available on `PATH` or the environment is offline.
 
 `HOSTLET_URL` defaults to `https://hostlet.cn`; set it for a self-hosted instance. `HOSTLET_TOKEN` is still supported for automation and overrides the saved token.
