@@ -8,7 +8,9 @@
 
 > 2026-11-09 发布复核：公共 npm registry 的 `hostlet-cli` 与 `hostlet-skill` 均含 `0.0.0-stage`、`0.1.0`、`0.2.0`，`latest` 为 `0.2.0`；GitHub `origin/master` 与本地 HEAD 同为 `a7f1b2f`。官网 `/` 与 `/?lang=en` 均返回 200，且包含安装命令、GitHub 仓库链接及对应语言提示词。Windows 宿主再次执行 `npm test`：386 项，384 通过、2 项条件跳过、0 失败；`npm run build` 通过 48 个模块。按官网命令从 npm 安装到隔离临时目录成功，随附 CLI 输出 `hostlet-cli 0.2.0`。生产主机 `/opt/hostlet/app` 仍指向 `20261109-96f234125a9f`，`hostlet` 服务为 active。
 
-> 2026-11-10 新装 Skill 全流程：使用 `C:\Users\xws\.codex\skills\hostlet-publish` 的随附 CLI，对临时本机多用户实例执行 27 个命令步骤，全部通过。链路覆盖版本、注册、`whoami`、API Key 创建/列出/撤销、工作空间、应用列表、私有目录发布、发布回执查询、替换版本、版本列表、回滚、分享创建/列出/撤销、退出后拒绝访问、重新登录以及最终数据库状态；新应用保持私有，密码和令牌未出现在命令输出，临时数据未写入官方实例。过程中确认 Windows `.cmd` 包装器经额外 shell 转发含空格参数时会拆词，已在技能文档与安装说明中明确优先使用 `hostlet.ps1`；`hostlet-skill` 本地版本升级到 `0.2.1`，npm 公共包仍为 `0.2.0`，正式发布因 npm 登录态失效未执行。
+> 2026-11-10 新装 Skill 全流程：使用 `C:\Users\xws\.codex\skills\hostlet-publish` 的随附 CLI，对临时本机多用户实例执行 27 个命令步骤，全部通过。链路覆盖版本、注册、`whoami`、API Key 创建/列出/撤销、工作空间、应用列表、私有目录发布、发布回执查询、替换版本、版本列表、回滚、分享创建/列出/撤销、退出后拒绝访问、重新登录以及最终数据库状态；新应用保持私有，密码和令牌未出现在命令输出，临时数据未写入官方实例。过程中确认 Windows `.cmd` 包装器经额外 shell 转发含空格参数时会拆词，已在技能文档与安装说明中明确优先使用 `hostlet.ps1`；`hostlet-skill` 版本升级到 `0.2.1`。
+
+> 2026-11-10 发布方式切换：账号 `revolves` 的 npm 2FA 为 `auth-and-writes` 且仅绑定安全密钥，命令行无法提供 TOTP，改用 npm Trusted Publishing。`hostlet-skill` 的 Trusted Publisher 已绑定 `Revolves/hostlet` 与 `.github/workflows/publish-skill.yml`（允许 `npm publish` 与 `npm stage publish`）；推送标签 `hostlet-skill-v0.2.1` 后由 GitHub Actions 以 OIDC 身份发布，公共 registry 的 `latest` 已变为 `0.2.1`，发布过程不涉及任何长期令牌。随后在 Windows 临时目录执行 `npx --yes hostlet-skill@latest install --target <tmp>` 复核：技能结构与 `bin/hostlet.ps1` 均正常，内置 `hostlet-cli` 输出 `0.2.0`。后续发版只需同步 `skills/hostlet-publish/package.json` 版本并推送对应标签。
 
 ## 本次验证
 
@@ -45,7 +47,7 @@
 | 配额、保留策略、举报及停用 | 已实现并有验证 | 此前服务端及浏览器覆盖配额、配置、举报和停用；邮件失败及清理等待期主要使用模拟邮件和时钟。 |
 | 管理员配置 | 部分实现 | 注册开关、工作空间配额和保留周期可在界面设置；SMTP 和实例级上传硬上限通过环境配置设置，而非管理界面。 |
 | 恢复、迁移与备份 | 已实现，生产演练待完成 | 自动化覆盖发布、删除、账号注销和迁移中断恢复；备份恢复与旧页迁移仅使用合成数据，未对实际生产备份演练。 |
-| API 凭据、CLI 和 Skill | 已实现并有验证 | 账户页 `API Key` 标签可创建/撤销 30 天凭据，默认包含读取、发布和分享权限；真实浏览器创建和 Bearer CLI 查询通过。CLI 可查询空间、应用、版本，发布 HTML/ZIP/目录及替换版本，并支持回滚、分享和不确定结果恢复。CLI 默认使用 `https://hostlet.cn`，设置 `HOSTLET_URL` 可切换自建实例。`hostlet-cli@0.2.0` 已发布；`hostlet-skill` 公共 npm 包为 `0.2.0`，本地源码修复为 `0.2.1` 并待发布。Windows 干净目录、官网提示词隔离安装、技能结构校验、随附 CLI 版本输出、新会话加载，及隔离实例注册到发布的 27 步全流程均已验证；Linux/macOS 实机验证仍待补。 |
+| API 凭据、CLI 和 Skill | 已实现并有验证 | 账户页 `API Key` 标签可创建/撤销 30 天凭据，默认包含读取、发布和分享权限；真实浏览器创建和 Bearer CLI 查询通过。CLI 可查询空间、应用、版本，发布 HTML/ZIP/目录及替换版本，并支持回滚、分享和不确定结果恢复。CLI 默认使用 `https://hostlet.cn`，设置 `HOSTLET_URL` 可切换自建实例。`hostlet-cli@0.2.0` 已发布；`hostlet-skill` 公共 npm 包已通过 Trusted Publishing 发布 `0.2.1`。Windows 干净目录、官网提示词隔离安装、技能结构校验、随附 CLI 版本输出、新会话加载，及隔离实例注册到发布的 27 步全流程均已验证；Linux/macOS 实机验证仍待补。 |
 | MCP、Skill、GitHub Action | Skill 已实现，MCP/Action 未实现 | 可安装 Skill 位于 `skills/hostlet-publish/`，复用 CLI 并支持官方地址与自定义实例；默认私有、令牌保护和不确定结果恢复均已写入操作约束。Skill 结构校验通过，真实目录发布、替换版本和版本查询已在隔离多用户实例通过；MCP 和发布 Action 尚未提供。 |
 | 容器自部署 | 已有隔离演练，目标环境待验收 | 此前 ARM64 Docker 镜像和独立 Compose 测试配置已构建启动，并经本机隧道验证；仓库示例 Compose 尚未原样运行验收。 |
 

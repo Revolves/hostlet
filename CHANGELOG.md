@@ -34,6 +34,8 @@
 - 单域兼容模式：显式设置 `SINGLE_DOMAIN_HOSTING=true` 后，可用 `apps.hostlet.cn` 这类管理域子域承载应用；默认仍要求独立可注册域。
 - `hostlet.cn` 已启用单域多用户：`*.apps.hostlet.cn` 通配符证书、`__Host-` Cookie、用户名注册、账户 API Key 和 CLI 发布已连通。
 
+- `hostlet-skill@0.2.1` 通过 npm Trusted Publishing（GitHub Actions OIDC）发布，发布链路不再依赖长期令牌；新增 `.github/workflows/publish-skill.yml`，推送 `hostlet-skill-v*` 标签即校验版本并自动发布。
+
 ### Changed
 
 - 统一官网、登录页、举报页、账户门户和管理导航的返回路径与视觉入口。
