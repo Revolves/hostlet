@@ -14,6 +14,8 @@
 
 > 2026-11-10 可见性命令与生产发布：`hostlet-cli@0.2.1` 新增 `visibility public|private`，通过 `/api/cli/workspaces/:id/pages/:id/visibility` 修改可见性（`publish` 权限，团队空间需所有者），并修复 `hostlet.ps1` 不转发管道输入导致 `--password-stdin` 失效的问题。本地 `npm run check`：390 项中 388 通过、2 项 Windows 条件跳过、0 失败，构建 48 个模块。生产部署 `3d92e5c` 到 `/opt/hostlet/releases/20261110-3d92e5c`（`/opt/hostlet/app` 原子切换），服务器端 390/390 通过、13 项部署冒烟全部通过；公网实测 `visibility private` 返回 401、`visibility public` 返回 200。`showcase/the-end-of-time` 以 revision 1 发布为公开应用 `w-08e11a575b619a23c7344fbfa314a974`（`https://w-08e11a575b619a23c7344fbfa314a974.apps.hostlet.cn/`），首页目录收录且访问计数增长。npm 侧 `hostlet-cli@0.2.1` 与 `hostlet-skill@0.2.2` 均由 Trusted Publishing 自动发布，`npm view` 确认 `latest` 分别为此两版。
 
+> 2026-11-10 应用管理命令与技能修复：`hostlet-cli@0.2.2` 新增 `rename`、`delete-release` 和 `delete-app`，服务端 `/api/cli` 仅放行对应的 PATCH、DELETE 路由，删除版本仍校验当前 revision 且禁止删除活动版本。本地 `npm run check`：397 项中 395 通过、2 项 Windows 条件跳过、0 失败，构建 48 个模块。生产部署 `793d9d5` 到 `/opt/hostlet/releases/20261110-793d9d5`，服务器端 397/397 通过、13 项冒烟通过；公网完成改名、删除旧版本和临时应用删除测试。`hostlet-skill@0.2.4` 已修复默认依赖并携带 `hostlet-cli@0.2.2`，使用 `npx --yes hostlet-skill@latest install` 默认安装后确认 wrapper 版本为 `0.2.2`，三条管理命令均可从技能帮助中直接调用。需要始终追随 npm 最新 CLI 时使用 `--cli-version latest`；默认固定版本用于保证技能发布可复现。
+
 ## 本次验证
 
 - Windows、Node 22.21.1、npm 10.9.4：`npm test` 共 373 项，371 通过、0 失败、2 跳过。跳过项为“Windows 无符号链接能力”和“POSIX 文件权限不可用”，本次不将其计为通过。

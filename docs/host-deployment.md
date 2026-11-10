@@ -266,3 +266,12 @@ sudo systemctl start hostlet
 - 服务器端在发布目录执行 `npm test`：390 项全部通过、0 跳过、0 失败；`npm run build` 通过。切换后健康检查 200，`deploy/host/smoke-test.sh` 13 项全部通过。
 - 公网验证：对应用 `w-08e11a575b619a23c7344fbfa314a974` 执行 `visibility private` 后入口返回 401，执行 `visibility public` 后返回 200。
 - 回滚方式：把 `/opt/hostlet/app` 指回 `/opt/hostlet/releases/20261109-96f234125a9f` 并重启服务。
+
+## 2026-11-10 应用管理命令发布
+
+- 发布目录：`/opt/hostlet/releases/20261110-793d9d5`，上一版本为 `/opt/hostlet/releases/20261110-3d92e5c`；通过 `/opt/hostlet/app` 符号链接切换后重启 `hostlet` 服务。
+- 变更内容：`hostlet-cli@0.2.2` 新增 `rename`、`delete-release` 和 `delete-app`；CLI 白名单仅放行标题 PATCH、应用 DELETE 和指定版本 DELETE，删除版本必须提交当前 revision，活动版本不能直接删除，删除应用必须显式传 `--confirm`。
+- 服务器端在发布目录执行完整测试：397 项全部通过、0 跳过、0 失败；`npm run build` 通过，`deploy/host/smoke-test.sh` 13 项全部通过。
+- 公网验证：完成应用改名与改回、删除旧版本后确认 revision 递增且页面仍返回 200、创建临时应用后删除并确认应用列表恢复；测试未删除正式应用。
+- npm：`hostlet-cli@0.2.2` 与 `hostlet-skill@0.2.4` 已通过 Trusted Publishing 发布；`hostlet-skill@0.2.4` 默认固定依赖 `hostlet-cli@0.2.2`，默认安装后三条管理命令可直接使用。
+- 回滚方式：把 `/opt/hostlet/app` 指回 `/opt/hostlet/releases/20261110-3d92e5c` 并重启服务。
