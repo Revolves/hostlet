@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { hostingBrandSuffix, pipeHostedFile } from './hosting-brand.js';
 import path from 'node:path';
 import net from 'node:net';
 import express, { Router } from 'express';
@@ -161,13 +162,14 @@ export function createWorkspaceIpHostingRouter({service, shareService=null, cont
     let fd=fs.openSync(file.filename,fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
     try {
       const opened=fs.fstatSync(fd); if(!opened.isFile() || opened.dev!==file.stat.dev || opened.ino!==file.stat.ino) {fs.closeSync(fd);return res.sendStatus(404);}
-      res.type(path.extname(file.filename)); res.set('Content-Length',String(opened.size));
+      const suffix = hostingBrandSuffix(file.filename, service.managementOrigin);
+      res.type(path.extname(file.filename)); res.set('Content-Length',String(opened.size + Buffer.byteLength(suffix)));
       if(req.method==='HEAD') {fs.closeSync(fd);return res.end();}
       const release=req.maintenance?.retain() || (()=>{});
       let stream; try {stream=fs.createReadStream(file.filename,{fd,autoClose:true});fd=undefined;} catch(e) {release();throw e;}
       const disconnect=()=>stream.destroy(); const timer=setTimeout(()=>{stream.destroy();res.destroy();},transferTimeoutMs); timer.unref();
       const clear=()=>clearTimeout(timer); res.once('finish',clear); res.once('close',clear); res.once('close',disconnect);
-      stream.once('close',()=>{res.off('close',disconnect);release();}); stream.once('error',()=>res.headersSent ? res.destroy() : res.sendStatus(500)); return stream.pipe(res);
+      stream.once('close',()=>{res.off('close',disconnect);release();}); stream.once('error',()=>res.headersSent ? res.destroy() : res.sendStatus(500)); return pipeHostedFile(stream, res, suffix);
     } catch(error) {if(fd!==undefined) {try {fs.closeSync(fd);} catch {}} throw error;}
   });
   router.use((err,req,res,next)=>res.headersSent ? res.destroy() : res.sendStatus(err.status===413 ? 413 : err.status===400 ? 400 : 500));

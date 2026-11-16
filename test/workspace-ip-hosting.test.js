@@ -33,7 +33,10 @@ test('exact host, one-use member sessions, current-page checks and scoped cookie
   assert.equal((await x.request(`/p/${a}/sub/app.js`,{headers:{cookie}})).body,'ok');
   assert.equal((await x.request(`/p/${b}/`,{headers:{cookie}})).status,401);
   assert.equal((await x.request(`/p/${a}/sub`,{headers:{cookie}})).headers.location,`/p/${a}/sub/`);
-  assert.equal((await x.request(`/p/${a}/sub/`,{headers:{cookie}})).body,'nested');
+  const branded = await x.request(`/p/${a}/sub/`,{headers:{cookie}});
+  assert.match(branded.body, /^nested\n<script data-hostlet-brand>/);
+  assert.match(branded.body, /https:\/\/github\.com\/Revolves\/hostlet/);
+  assert.equal(Number(branded.headers['content-length']), Buffer.byteLength(branded.body));
   x.disable(); assert.equal((await x.request(`/p/${a}/sub/app.js`,{headers:{cookie}})).status,401);
 });
 

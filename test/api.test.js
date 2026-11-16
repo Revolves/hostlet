@@ -138,7 +138,10 @@ test("uploads, serves, edits, previews, replaces, and deletes a page", async (t)
 
   const served = await fetch(`${app.pages}/p/product-demo/`);
   assert.equal(served.status, 200);
-  assert.match(await served.text(), /Hello Hostlet/);
+  const servedHtml = await served.text();
+  assert.match(servedHtml, /Hello Hostlet/);
+  assert.match(servedHtml, /data-hostlet-brand/);
+  assert.match(servedHtml, /https:\/\/github.com\/Revolves\/hostlet/);
 
   const canonical = await fetch(`${app.pages}/p/product-demo`, { redirect: "manual" });
   assert.equal(canonical.status, 302);
@@ -188,6 +191,7 @@ test("uploads, serves, edits, previews, replaces, and deletes a page", async (t)
   const pageCookie = loginResponse.headers.getSetCookie()[0].split(";")[0];
   const unlocked = await fetch(`${app.pages}${loginLocation}`, { headers: { Cookie: pageCookie } });
   assert.equal(unlocked.status, 200);
+  assert.match(await unlocked.text(), /data-hostlet-brand/);
   assert.match(unlocked.headers.get("content-security-policy"), /^sandbox /);
   assert.doesNotMatch(unlocked.headers.get("content-security-policy"), /allow-same-origin/);
 

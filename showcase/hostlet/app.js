@@ -50,19 +50,20 @@
     });
   }
 
-  const copy = document.querySelector("[data-copy]");
-  const status = document.querySelector(".copy__status");
-  if (copy && status) {
+  document.querySelectorAll("[data-copy]").forEach(copy => {
+    const originalLabel = copy.textContent;
+    let timer;
     copy.addEventListener("click", async () => {
       const source = document.querySelector(copy.dataset.copy);
       const text = source?.content?.textContent || source?.textContent || "";
       try {
         await navigator.clipboard.writeText(text.trim());
-        status.textContent = "已复制";
+        copy.textContent = "已复制";
       } catch {
-        status.textContent = "请手动选择命令";
+        copy.textContent = "复制失败，请手动选择文本";
       }
-      window.setTimeout(() => { status.textContent = ""; }, 2200);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => { copy.textContent = originalLabel; }, 2200);
     });
-  }
+  });
 })();

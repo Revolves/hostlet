@@ -20,6 +20,12 @@ npx serve showcase/hostlet
 
 应用应保持公开状态，以便出现在官网公开目录中。
 
-## 字体许可
+## 页面交互与验收
+
+页面包含滚动入场、轨道悬浮交互、Skill 安装命令与 Agent 提示词复制，以及原生可键盘操作的 FAQ。复制失败时提供手动复制提示；系统开启减少动态效果时关闭移动动效。官网、工作台和公开目录使用完整的官方地址，兼容应用子域托管。
+
+本地可运行 `node node_modules/vite/bin/vite.js showcase/hostlet --host 127.0.0.1 --port 4178` 预览。验收桌面和 390px、320px 宽度布局，检查复制结果、FAQ 展开及所有外部入口。更新源码不代表线上展示应用已重新发布。
+
+## 字体许可说明
 
 页面使用 Manrope（SIL Open Font License 1.1），字体文件来自 `@fontsource-variable/manrope`。

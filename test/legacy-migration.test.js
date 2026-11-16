@@ -165,7 +165,7 @@ test('migrated private and public pages enforce their visibility and old URLs st
  const call=(host,url)=>new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port:server.address().port,path:url,headers:{host}},res=>{let body='';res.on('data',c=>body+=c);res.on('end',()=>resolve({status:res.statusCode,body}));});req.on('error',reject);req.end();});
  assert.equal((await call('legacy.example.test','/p/private/')).status,404);
  assert.equal((await call(`${privatePage.pageId}.apps.example.test`,'/')).status,401);
- const opened=await call(`${publicPage.pageId}.apps.example.test`,'/');assert.equal(opened.status,200);assert.equal(opened.body,'hello');
+ const opened=await call(`${publicPage.pageId}.apps.example.test`,'/');assert.equal(opened.status,200);assert.match(opened.body,/^hello\n<script data-hostlet-brand>/);
 });
 
 test('preflight rejects out-of-root paths, altered files, and insufficient quota',t=>{

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { hostingBrandSuffix, pipeHostedFile } from './hosting-brand.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { isIP } from 'node:net';
@@ -194,7 +195,8 @@ export function createWorkspaceHostingAppRouter({ service, shareService = null, 
       fd=fs.openSync(file.filename,fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
       const opened=fs.fstatSync(fd);
       if (!opened.isFile() || opened.dev !== file.stat.dev || opened.ino !== file.stat.ino) {fs.closeSync(fd);return res.sendStatus(404);}
-      res.type(path.extname(file.filename));res.set('Content-Length',String(opened.size));
+      const suffix = hostingBrandSuffix(file.filename, service.managementOrigin);
+      res.type(path.extname(file.filename));res.set('Content-Length',String(opened.size + Buffer.byteLength(suffix)));
       if (req.method === 'HEAD') {fs.closeSync(fd);return res.end();}
       const release=req.maintenance?.retain() || (()=>{});
       let stream;
@@ -208,7 +210,7 @@ export function createWorkspaceHostingAppRouter({ service, shareService = null, 
       res.once('close',disconnect);
       stream.once('close',()=>{res.off('close',disconnect);release();});
       stream.once('error',()=>{if(res.headersSent)res.destroy();else res.sendStatus(500);});
-      return stream.pipe(res);
+      return pipeHostedFile(stream, res, suffix);
     } catch (error) {
       if (fd !== undefined) {try {fs.closeSync(fd);} catch { /* Preserve the original failure. */ }}
       if (['ENOENT','ENOTDIR','ELOOP','EACCES'].includes(error.code)) return res.sendStatus(404);

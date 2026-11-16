@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { hostingBrandSuffix } from "./hosting-brand.js";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import express from "express";
@@ -594,8 +595,9 @@ function createPagesApp({ config, pages, pageLogin, workspaceHostingRouter, main
           ? ""
           : path.posix.dirname(relativePath);
         const base = tokenizedPagePath(page, accessToken, directory === "." ? "" : directory);
-        return res.send(injectBaseHref(html, base.endsWith("/") ? base : `${base}/`));
+        return res.send(injectBaseHref(html, base.endsWith("/") ? base : `${base}/`) + hostingBrandSuffix(finalPath, config.adminOrigin));
       }
+      return res.send(fs.readFileSync(finalPath, "utf8") + hostingBrandSuffix(finalPath, config.adminOrigin));
     }
     return res.sendFile(finalPath);
   });

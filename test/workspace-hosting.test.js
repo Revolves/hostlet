@@ -122,7 +122,13 @@ test('private hosting authenticates every request and confines app credentials a
   assert.equal((await request(`${a}.apps.example.test`,'/')).status,401);
   db.prepare('UPDATE workspace_pages SET entry_file=? WHERE id=?').run('nested/100%.html',a);
   assert.equal((await request(`${a}.apps.example.test`,'/',{headers:{cookie}})).headers.location,'/nested/100%25.html');
-  assert.equal((await request(`${a}.apps.example.test`,'/nested/100%25.html',{headers:{cookie}})).body,'percent');
+  const branded = await request(`${a}.apps.example.test`,'/nested/100%25.html',{headers:{cookie}});
+  assert.match(branded.body, /^percent\n<script data-hostlet-brand>/);
+  assert.match(branded.body, /https:\/\/manage\.hostlet\.test\//);
+  assert.equal(Number(branded.headers['content-length']), Buffer.byteLength(branded.body));
+  const brandedHead = await request(`${a}.apps.example.test`,'/nested/100%25.html',{method:'HEAD',headers:{cookie}});
+  assert.equal(brandedHead.body, '');
+  assert.equal(brandedHead.headers['content-length'], branded.headers['content-length']);
   db.prepare('UPDATE workspace_pages SET entry_file=? WHERE id=?').run('index.html',a);
   const directory=await request(`${a}.apps.example.test`,'/nested?tab=one',{headers:{cookie}});
   assert.equal(directory.status,308);assert.equal(directory.headers.location,'/nested/?tab=one');

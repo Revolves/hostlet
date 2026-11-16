@@ -17,7 +17,7 @@
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
   <header class="topbar" data-intro>
-    <a class="brand" href="/" aria-label="Hostlet 官网">
+    <a class="brand" href="https://hostlet.cn/" aria-label="Hostlet 官网">
       <span class="brand__mark" aria-hidden="true">H</span>
       <span>Hostlet</span>
     </a>
@@ -25,9 +25,9 @@
       <a href="#flow">发布流程</a>
       <a href="#capabilities">能力</a>
       <a href="#cli">CLI / Skill</a>
-      <a href="https://github.com/Revolves" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <a href="https://github.com/Revolves/hostlet" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
     </nav>
-    <a class="topbar__cta" href="/workspace">打开工作台 <span aria-hidden="true">↗</span></a>
+    <a class="topbar__cta" href="https://hostlet.cn/workspace">打开工作台 <span aria-hidden="true">↗</span></a>
   </header>
 
   <main id="main">
@@ -41,13 +41,13 @@
         </h1>
         <p class="hero__lede" data-intro>上传 HTML 或 ZIP，立刻拥有可分享的独立应用地址。公开、私有、版本回滚与访问统计，都在同一个地方。</p>
         <div class="hero__actions" data-intro>
-          <a class="button button--ink" href="/workspace">开始发布 <span aria-hidden="true">↗</span></a>
-          <a class="text-link" href="/">浏览公开应用 <span aria-hidden="true">→</span></a>
+          <a class="button button--ink" href="#cli">让 AI 帮我发布 <span aria-hidden="true">↓</span></a>
+          <a class="text-link" href="https://hostlet.cn/#applications">浏览公开应用 <span aria-hidden="true">→</span></a>
         </div>
         <dl class="hero__facts" data-intro>
           <div><dt>01</dt><dd>一个稳定地址</dd></div>
           <div><dt>20</dt><dd>个历史版本</dd></div>
-          <div><dt>∞</dt><dd>次分享</dd></div>
+          <div><dt>MIT</dt><dd>开源，可自行部署</dd></div>
         </dl>
       </div>
 
@@ -153,22 +153,23 @@
     <section class="cli" id="cli">
       <div class="cli__copy" data-reveal>
         <p class="eyebrow">CLI / SKILL</p>
-        <h2>把发布，<br>交给一条命令。</h2>
-        <p>在账户设置里创建 API Key，然后让命令行或 Agent 直接完成上传、替换和版本查询。</p>
+        <h2>作品做好了，<br>告诉 AI 发布。</h2>
+        <p>把下方提示词复制给支持终端与 Skill 的 AI 助手。安装器自带 CLI；首次发布时再完成账号与凭据授权。</p>
         <ul>
           <li>官方实例默认使用 <code>https://hostlet.cn</code></li>
           <li>自建实例通过 <code>HOSTLET_URL</code> 切换</li>
           <li>Key 只在创建时显示一次，可随时撤销</li>
         </ul>
-        <a class="text-link text-link--light" href="/workspace">创建我的 API Key <span aria-hidden="true">→</span></a>
+        <a class="text-link text-link--light" href="https://github.com/Revolves/hostlet/tree/master/skills/hostlet-publish" target="_blank" rel="noopener noreferrer">查看完整安装说明 <span aria-hidden="true">↗</span></a>
       </div>
       <div class="terminal" data-reveal>
         <div class="terminal__bar">
           <span></span><span></span><span></span>
           <small>hostlet / publish</small>
         </div>
-        <pre><code><span class="terminal__muted"># 设置凭据</span>
-export HOSTLET_TOKEN="hlt_..."
+        <pre><code><span class="terminal__muted"># 单独使用 CLI（示意流程）</span>
+npm install -g hostlet-cli
+hostlet login --identifier YOUR_USERNAME --password-stdin
 
 <span class="terminal__muted"># 发布一个目录</span>
 hostlet publish ./dist \
@@ -182,12 +183,42 @@ hostlet publish ./dist \
       </div>
     </section>
 
+    <section class="installation flow" aria-labelledby="install-title">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">从这里开始</p>
+        <h2 id="install-title">把安装，也交给 AI。</h2>
+        <p>需要 Node.js 22.13+。安装完成后开启新会话加载 Skill，再指定要发布的项目。</p>
+      </div>
+      <div class="installation__block">
+        <h3>安装最新 Skill 与随附 CLI</h3>
+        <code id="install-command">npx --yes hostlet-skill@latest install</code>
+        <button type="button" data-copy="#install-command">复制安装命令</button>
+        <h3>或直接复制给 AI 助手</h3>
+        <p id="agent-prompt">请帮我安装最新版 Hostlet 发布 Skill。先确认当前助手支持的技能目录，并检查 Node.js 与 npm 环境，需要 Node.js 22.13 或以上。运行 npx --yes hostlet-skill@latest install，必要时使用 --target 指定技能目录；已有安装时先检查本地修改。安装后验证 Skill 与随附 CLI 可用，并告诉我是否需要开启新会话。安装完成后先停下，等我指定项目，再进行账号授权与发布。项目地址：https://github.com/Revolves/hostlet。</p>
+        <button type="button" data-copy="#agent-prompt">复制 Agent 提示词</button>
+        <p>发布前确认项目、工作空间和访问状态；发布成功后返回页面链接。私有页面需要登录。</p>
+      </div>
+    </section>
+
+    <section class="faq flow" aria-labelledby="faq-title">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">发布之前</p>
+        <h2 id="faq-title">先把几个问题说清楚。</h2>
+      </div>
+      <details><summary>适合发布什么作品？</summary><p>个人主页、作品集、可视化报告、静态小工具和 AI 生成的 HTML 页面。支持 HTML、ZIP，CLI 还支持目录发布；需要构建的项目先生成静态产物。</p></details>
+      <details><summary>发布后所有人都能看见吗？</summary><p>新应用默认私有。你可以按需切换公开，或生成带密码、有效期的分享链接。只有公开应用会进入官网公开目录。</p></details>
+      <details><summary>必须安装 CLI 才能使用吗？</summary><p>可以直接在工作台上传。Skill 安装器自动附带独立 CLI，无需再全局安装；支持官方服务和通过 HOSTLET_URL 指定的自建实例。</p></details>
+      <details><summary>可以运行后端或数据库吗？</summary><p>Hostlet 托管静态前端，不执行服务端代码，也不提供数据库或 SPA fallback。外部 API 需要自行部署，并确认跨域和认证配置。</p></details>
+      <details><summary>更新作品后，旧链接还能使用吗？</summary><p>替换同一应用的版本时地址保持不变。可查询保留的历史版本、回滚、修改标题，也可删除历史版本或应用。</p></details>
+      <details><summary>可以自己部署吗？</summary><p>可以，代码使用 MIT 许可证，仓库提供宿主机部署说明。官方实例是开源演示平台，采用单域兼容模式。面向不可信用户的自建服务应按部署文档完成隔离与运维验收。</p></details>
+    </section>
+
     <section class="closing">
       <p class="eyebrow" data-reveal>NEXT</p>
       <h2 data-reveal>下一个地址，<br>留给你的作品。</h2>
       <div class="closing__actions" data-reveal>
-        <a class="button button--coral" href="/workspace">进入工作台 <span aria-hidden="true">↗</span></a>
-        <a class="text-link" href="/">看看别人的作品 <span aria-hidden="true">→</span></a>
+        <a class="button button--coral" href="https://hostlet.cn/workspace">进入工作台 <span aria-hidden="true">↗</span></a>
+        <a class="text-link" href="https://hostlet.cn/#applications">看看别人的作品 <span aria-hidden="true">→</span></a>
       </div>
     </section>
   </main>
@@ -199,8 +230,8 @@ hostlet publish ./dist \
       <span>轻量静态应用托管</span>
     </div>
     <nav aria-label="页脚">
-      <a href="/">公开目录</a>
-      <a href="https://github.com/Revolves" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <a href="https://hostlet.cn/#applications">公开目录</a>
+      <a href="https://github.com/Revolves/hostlet" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
       <a href="#main">回到顶部 ↑</a>
     </nav>
   </footer>
