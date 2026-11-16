@@ -35,8 +35,8 @@ Hostlet 是一个 MIT 开源的静态前端应用托管平台，使用 Express�
 
 ## 文档口径
 
-- 英文入口：根目录 [`README.md`](../README.md)
-- 中文入口：根目录 [`README.zh-CN.md`](../README.zh-CN.md)
+- 中文入口：根目录 [`README.md`](../README.md)
+- 英文入口：根目录 [`README.en.md`](../README.en.md)
 - CLI 包说明：[`cli/README.md`](../cli/README.md)
 - 技能包说明：[`skills/hostlet-publish/README.md`](../skills/hostlet-publish/README.md)
 - 安全政策与漏洞报告：[`SECURITY.md`](../SECURITY.md)

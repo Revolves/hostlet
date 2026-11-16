@@ -98,4 +98,4 @@
 
 自定义域名、付费、运行用户服务端代码、平台业务数据库、多人实时编辑、PostgreSQL、对象存储和多实例高可用均未列入已确认的首版范围，若后续需要应单独设计和排期。
 
-参考：[多用户设计](superpowers/specs/2026-10-27-multi-user-hosting-design.md)、[部署与实机记录](deployment.md)、[浏览器验证记录](superpowers/plans/2026-10-28-workspace-https-browser.md)、[CLI 使用说明](../README.zh-CN.md)。
+参考：[多用户设计](superpowers/specs/2026-10-27-multi-user-hosting-design.md)、[部署与实机记录](deployment.md)、[浏览器验证记录](superpowers/plans/2026-10-28-workspace-https-browser.md)、[CLI 使用说明](../README.md)。
